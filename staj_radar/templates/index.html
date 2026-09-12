@@ -160,7 +160,7 @@
         let userEmailStatuses = {};
 
         function getUserEmail() {
-            return (document.getElementById('user-email').value || localStorage.getItem('user_email') || '').trim().lowerCase();
+            return (document.getElementById('user-email').value || localStorage.getItem('user_email') || '').trim().toLowerCase();
         }
 
         function saveEmailAndReload() {

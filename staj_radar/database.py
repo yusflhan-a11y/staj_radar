@@ -37,7 +37,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT NOT NULL,
             job_id INTEGER NOT NULL,
-            status TEXT NOT NULL, -- 'saved', 'applied', 'ignored'
+            status TEXT NOT NULL,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(email, job_id)
         )
@@ -52,6 +52,14 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Check if notes empty, add initial welcome note
+    cursor.execute("SELECT COUNT(*) as count FROM notes")
+    if cursor.fetchone()["count"] == 0:
+        cursor.execute("""
+            INSERT INTO notes (author, message) 
+            VALUES ('Yusuf (Kurucu)', '👋 Staj Radar Ortak Not Panosuna Hoş Geldiniz! Staj duyurularını ve başvuru tüyolarını buradan paylaşabilirsiniz.')
+        """)
 
     # Notifications Table
     cursor.execute("""

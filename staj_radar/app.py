@@ -12,6 +12,15 @@ app = Flask(__name__)
 # Initialize database
 database.init_db()
 
+# Seed initial jobs if database is empty (e.g. on fresh Render deployment)
+def seed_jobs_if_empty():
+    stats = database.get_stats()
+    if stats.get("total_jobs", 0) == 0:
+        print("🌱 Veritabanı boş, ilk ilan taraması otomatik başlatılıyor...")
+        run_all_scrapers()
+
+seed_jobs_if_empty()
+
 # Background Scheduler for Automatic Periodic Scans
 def start_background_scheduler(interval_hours=6):
     def scheduler_loop():
