@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Radar - Günlük Staj İlanı Takip & Tarama</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <span class="logo-icon">📡</span>
+                <span>Staj Radar</span>
+            </div>
+            <div class="nav-right">
+                <button id="btn-scan" class="btn btn-primary" onclick="triggerScan()">
+                    <span id="scan-spinner" class="spinner" style="display: none;"></span>
+                    <span id="scan-text">⚡ Şimdi Tara</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Top Stats Cards Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-info">
+                    <h4>Toplam İlan</h4>
+                    <div class="stat-value" id="stat-total">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ce">💻</div>
+                <div class="stat-info">
+                    <h4>Bilgisayar Müh.</h4>
+                    <div class="stat-value" id="stat-ce">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon mis">📊</div>
+                <div class="stat-info">
+                    <h4>YBS İlanları</h4>
+                    <div class="stat-value" id="stat-mis">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon today">⚡</div>
+                <div class="stat-info">
+                    <h4>Bugün Eklendi</h4>
+                    <div class="stat-value" id="stat-today">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon saved">⭐</div>
+                <div class="stat-info">
+                    <h4>Takip / Başvuru</h4>
+                    <div class="stat-value" id="stat-saved-applied">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-container">
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="computer_engineering" onclick="switchTab('computer_engineering')">
+                    <span>💻 Bilgisayar Mühendisliği</span>
+                    <span class="badge-counter" id="badge-ce">0</span>
+                </button>
+                <button class="tab-btn" data-tab="mis" onclick="switchTab('mis')">
+                    <span>📊 Yönetim Bilişim Sistemleri (YBS)</span>
+                    <span class="badge-counter" id="badge-mis">0</span>
+                </button>
+                <button class="tab-btn" data-tab="saved_applied" onclick="switchTab('saved_applied')">
+                    <span>⭐ Kaydedilen & Başvurulanlar</span>
+                </button>
+                <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">
+                    <span>🔔 Bildirimler</span>
+                    <span class="badge-counter alert" id="badge-notifications" style="display: none;">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar" id="filter-bar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="İlan başlığı, şirket veya şehir ara..." oninput="debounceSearch()">
+            </div>
+            <select class="filter-select" id="filter-work-type" onchange="loadJobs()">
+                <option value="">Tüm Çalışma Türleri</option>
+                <option value="remote">Uzaktan (Remote)</option>
+                <option value="hybrid">Hibrit (Hybrid)</option>
+                <option value="office">Ofis (On-site)</option>
+            </select>
+            <select class="filter-select" id="filter-platform" onchange="loadJobs()">
+                <option value="all">Tüm Platformlar</option>
+                <option value="Youthall">Youthall</option>
+                <option value="GitHub Repos">GitHub Repos</option>
+                <option value="Kariyer Hub">Kariyer Hub</option>
+                <option value="LinkedIn & Global Jobs">LinkedIn & Global</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportCSV()" title="İlanları Excel/CSV olarak indir">
+                📥 CSV İndir
+            </button>
+        </div>
+
+        <!-- Jobs View Grid -->
+        <div class="jobs-grid" id="jobs-container">
+            <!-- Dynamic Job Cards Rendered Here -->
+        </div>
+
+        <!-- Notifications View (Hidden by default) -->
+        <div id="notifications-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 700;">Uygulama İçi Tarama Bildirimleri</h3>
+                <button class="btn btn-secondary" onclick="markNotificationsRead()">Tümünü Okundu İşaretle</button>
+            </div>
+            <div id="notifications-list">
+                <!-- Notifications rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let currentTab = 'computer_engineering';
+        let searchTimeout = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadJobs();
+            loadNotifications();
+
+            // Auto refresh stats & notifications every 15s
+            setInterval(() => {
+                loadStats();
+                loadNotifications();
+            }, 15000);
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+            });
+
+            const filterBar = document.getElementById('filter-bar');
+            const jobsContainer = document.getElementById('jobs-container');
+            const notifContainer = document.getElementById('notifications-container');
+
+            if (tab === 'notifications') {
+                filterBar.style.display = 'none';
+                jobsContainer.style.display = 'none';
+                notifContainer.style.display = 'block';
+                loadNotifications();
+            } else {
+                filterBar.style.display = 'flex';
+                jobsContainer.style.display = 'grid';
+                notifContainer.style.display = 'none';
+                loadJobs();
+            }
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadJobs();
+            }, 300);
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                if (data.success) {
+                    const s = data.stats;
+                    document.getElementById('stat-total').innerText = s.total_jobs;
+                    document.getElementById('stat-ce').innerText = s.ce_jobs;
+                    document.getElementById('stat-mis').innerText = s.mis_jobs;
+                    document.getElementById('stat-today').innerText = s.today_jobs;
+                    document.getElementById('stat-saved-applied').innerText = s.saved_jobs + s.applied_jobs;
+
+                    document.getElementById('badge-ce').innerText = s.ce_jobs;
+                    document.getElementById('badge-mis').innerText = s.mis_jobs;
+
+                    const notifBadge = document.getElementById('badge-notifications');
+                    if (s.unread_notifications > 0) {
+                        notifBadge.innerText = s.unread_notifications;
+                        notifBadge.style.display = 'inline-block';
+                    } else {
+                        notifBadge.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("Stats yüklenemedi:", err);
+            }
+        }
+
+        async function loadJobs() {
+            const container = document.getElementById('jobs-container');
+            container.innerHTML = '<div class="empty-state"><div class="spinner" style="margin: 0 auto 1rem; width: 30px; height: 30px;"></div><p>İlanlar yükleniyor...</p></div>';
+
+            const search = document.getElementById('search-input').value.trim();
+            const workType = document.getElementById('filter-work-type').value;
+            const platform = document.getElementById('filter-platform').value;
+
+            let url = '/api/jobs?';
+            if (currentTab === 'computer_engineering' || currentTab === 'mis') {
+                url += `category=${currentTab}&`;
+            } else if (currentTab === 'saved_applied') {
+                url += `status=saved&status=applied&`;
+            }
+
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+            if (workType) url += `work_type=${workType}&`;
+            if (platform && platform !== 'all') url += `platform=${encodeURIComponent(platform)}&`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.success && data.jobs.length > 0) {
+                    container.innerHTML = data.jobs.map(job => renderJobCard(job)).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <h3>İlan Bulunamadı</h3>
+                            <p>Aradığınız kriterlere uygun staj ilanı bulunamadı. "Şimdi Tara" butonuna basarak tarama gerçekleştirebilirsiniz.</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><h3>Hata Oluştu</h3><p>İlanlar yüklenirken bir sorun oluştu.</p></div>';
+            }
+        }
+
+        function renderJobCard(job) {
+            const isSaved = job.status === 'saved';
+            const isApplied = job.status === 'applied';
+            
+            const workTypeLabel = job.work_type === 'remote' ? '🌐 Uzaktan' : (job.work_type === 'hybrid' ? '🏢 Hibrit' : '📍 Ofis');
+            const workTypeClass = job.work_type === 'remote' ? 'remote' : (job.work_type === 'hybrid' ? 'hybrid' : '');
+
+            const dateStr = new Date(job.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+
+            return `
+                <div class="job-card" id="job-card-${job.id}">
+                    <div>
+                        <div class="job-header">
+                            <span class="company-tag">🏢 ${escapeHtml(job.company)}</span>
+                            <span class="platform-badge">${escapeHtml(job.platform)}</span>
+                        </div>
+                        <h3 class="job-title">${escapeHtml(job.title)}</h3>
+                        <p class="job-description">${escapeHtml(job.description || '')}</p>
+                    </div>
+
+                    <div>
+                        <div class="meta-row">
+                            <span class="meta-pill ${workTypeClass}">${workTypeLabel}</span>
+                            <span class="meta-pill">📍 ${escapeHtml(job.location || 'Türkiye')}</span>
+                            <span class="meta-pill">📅 ${dateStr}</span>
+                        </div>
+
+                        <div class="job-actions">
+                            <div class="action-btn-group">
+                                <button class="icon-btn ${isSaved ? 'saved' : ''}" title="Kaydet" onclick="updateStatus(${job.id}, '${isSaved ? 'new' : 'saved'}')">
+                                    ${isSaved ? '★' : '☆'}
+                                </button>
+                                <button class="icon-btn ${isApplied ? 'applied' : ''}" title="Başvurdum" onclick="updateStatus(${job.id}, '${isApplied ? 'new' : 'applied'}')">
+                                    ${isApplied ? '✓' : '📝'}
+                                </button>
+                                <button class="icon-btn" title="Gizle" onclick="updateStatus(${job.id}, 'ignored')">
+                                    🗑️
+                                </button>
+                            </div>
+                            <a href="${escapeHtml(job.url)}" target="_blank" class="apply-link">
+                                Doğrudan Başvur ↗
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updateStatus(jobId, newStatus) {
+            try {
+                const res = await fetch(`/api/jobs/${jobId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (newStatus === 'ignored' || currentTab === 'saved_applied') {
+                        loadJobs();
+                    } else {
+                        loadJobs();
+                    }
+                    loadStats();
+                }
+            } catch (err) {
+                console.error("Status güncellenemedi:", err);
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                const data = await res.json();
+                if (data.success) {
+                    const list = document.getElementById('notifications-list');
+                    if (data.notifications.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><p>Henüz bildirim bulunmuyor.</p></div>';
+                        return;
+                    }
+
+                    list.innerHTML = data.notifications.map(n => {
+                        const time = new Date(n.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                        return `
+                            <div class="notification-card ${n.is_read ? '' : 'unread'}">
+                                <div>
+                                    <div class="notification-title">${escapeHtml(n.title)}</div>
+                                    <div class="notification-msg">${escapeHtml(n.message)}</div>
+                                </div>
+                                <div class="notification-time">${time}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error("Bildirimler yüklenemedi:", err);
+            }
+        }
+
+        async function markNotificationsRead() {
+            await fetch('/api/notifications/read', { method: 'POST' });
+            loadNotifications();
+            loadStats();
+        }
+
+        async function triggerScan() {
+            const btnText = document.getElementById('scan-text');
+            const spinner = document.getElementById('scan-spinner');
+            const btn = document.getElementById('btn-scan');
+
+            btnText.innerText = "Taranıyor...";
+            spinner.style.display = "inline-block";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/scan', { method: 'POST' });
+                const data = await res.json();
+
+                setTimeout(() => {
+                    btnText.innerText = "⚡ Şimdi Tara";
+                    spinner.style.display = "none";
+                    btn.disabled = false;
+                    loadStats();
+                    loadJobs();
+                    loadNotifications();
+                }, 3500);
+            } catch (err) {
+                btnText.innerText = "⚡ Şimdi Tara";
+                spinner.style.display = "none";
+                btn.disabled = false;
+                alert("Tarama başlatılamadı.");
+            }
+        }
+
+        function exportCSV() {
+            const search = document.getElementById('search-input').value.trim();
+            const workType = document.getElementById('filter-work-type').value;
+
+            let url = `/api/jobs/export?format=csv&category=${currentTab}&`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+            if (workType) url += `work_type=${workType}&`;
+
+            window.open(url, '_blank');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
