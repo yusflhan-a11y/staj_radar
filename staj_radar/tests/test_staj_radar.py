@@ -29,16 +29,15 @@ class TestStajRadar(unittest.TestCase):
     def test_save_and_retrieve_job(self):
         test_job = {
             "title": "Test Yazılım Stajyeri",
-            "company": "Unit Test Corp",
+            "company": "Sample Tech Inc",
             "location": "Ankara",
             "platform": "TestPlatform",
-            "url": "https://testcorp.com/job/12345",
+            "url": "https://sampletech.com/job/12345",
             "description": "Test açıklaması"
         }
         job_id, is_new = save_job(test_job)
         self.assertIsNotNone(job_id)
         
-        # Verify deduplication
         job_id2, is_new2 = save_job(test_job)
         self.assertFalse(is_new2)
         self.assertEqual(job_id, job_id2)
