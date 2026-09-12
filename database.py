@@ -117,8 +117,8 @@ def get_user_job_statuses(email):
     conn.close()
     return {row["job_id"]: row["status"] for row in rows}
 
-def generate_hash(title, company, url):
-    raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
+def generate_hash(title, company, url=""):
+    raw = f"{title.strip().lower()}|{company.strip().lower()}"
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
 def categorize_job(title, description=""):
@@ -154,7 +154,7 @@ def save_job(job_data):
     platform = job_data.get("platform", "Bilinmeyen").strip()
     description = job_data.get("description", "").strip()
     
-    hash_key = generate_hash(title, company, url)
+    hash_key = generate_hash(title, company)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
     
@@ -168,7 +168,12 @@ def save_job(job_data):
         conn.close()
         return job_id, True
     except sqlite3.IntegrityError:
-        cursor.execute("UPDATE jobs SET scanned_at = CURRENT_TIMESTAMP WHERE hash_key = ?", (hash_key,))
+        # Job already exists: ALWAYS update url, description, location to ensure direct application URL!
+        cursor.execute("""
+            UPDATE jobs 
+            SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
+            WHERE hash_key = ?
+        """, (url, description, location, work_type, category, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
         conn.commit()
