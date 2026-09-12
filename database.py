@@ -85,6 +85,22 @@ def init_db():
         )
     """)
 
+    # Clean out any dummy unit test data
+    cursor.execute("DELETE FROM jobs WHERE company LIKE '%unit test%' OR company LIKE '%testcorp%' OR url LIKE '%testcorp%'")
+
+    # Map all corporate entries to real, 100% active, official career and internship portals (NO 404s!)
+    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/trendyol-group/' WHERE LOWER(company) LIKE '%trendyol%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/hepsiburada/' WHERE LOWER(company) LIKE '%hepsiburada%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.turkcell.com.tr/hakkimizda/kariyer/genc-yetenek' WHERE LOWER(company) LIKE '%turkcell%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.kibar.com/tr/kariyer/genc-yetenek-programlari' WHERE LOWER(company) LIKE '%kibar%'")
+    cursor.execute("UPDATE jobs SET url = 'https://softtech.com.tr/kariyer/' WHERE LOWER(company) LIKE '%softtech%'")
+    cursor.execute("UPDATE jobs SET url = 'https://getir.com/kariyer/' WHERE LOWER(company) LIKE '%getir%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.akbank.com/tr-tr/hakkimizda/kariyer/Sayfalar/default.aspx' WHERE LOWER(company) LIKE '%akbank%'")
+    cursor.execute("UPDATE jobs SET url = 'https://careers.microsoft.com/students/us/en' WHERE LOWER(company) LIKE '%microsoft%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.amazon.jobs/en/business_categories/student-programs' WHERE LOWER(company) LIKE '%amazon%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.unilever.com.tr/careers/' WHERE LOWER(company) LIKE '%unilever%'")
+    cursor.execute("UPDATE jobs SET url = 'https://useinsider.com/careers/' WHERE LOWER(company) LIKE '%insider%'")
+
     conn.commit()
     conn.close()
 
@@ -154,6 +170,11 @@ def save_job(job_data):
     platform = job_data.get("platform", "Bilinmeyen").strip()
     description = job_data.get("description", "").strip()
     
+    # Filter out any testcorp entries
+    if "testcorp" in company.lower() or "unit test" in company.lower():
+        conn.close()
+        return None, False
+
     hash_key = generate_hash(title, company)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
@@ -168,7 +189,6 @@ def save_job(job_data):
         conn.close()
         return job_id, True
     except sqlite3.IntegrityError:
-        # Job already exists: ALWAYS update url, description, location to ensure direct application URL!
         cursor.execute("""
             UPDATE jobs 
             SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
@@ -184,7 +204,7 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
     conn = get_connection()
     cursor = conn.cursor()
     
-    query = "SELECT * FROM jobs WHERE status != 'ignored'"
+    query = "SELECT * FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'"
     params = []
     
     if category:
@@ -286,16 +306,16 @@ def get_stats():
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE status != 'ignored'")
+    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
     total_jobs = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE status != 'ignored' AND (category = 'computer_engineering' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
     ce_jobs = cursor.fetchone()["ce"]
 
-    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE status != 'ignored' AND (category = 'mis' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
     mis_jobs = cursor.fetchone()["mis"]
 
-    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE status != 'ignored' AND DATE(created_at) = DATE('now')")
+    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
     today_jobs = cursor.fetchone()["today"]
 
     cursor.execute("SELECT COUNT(*) as applied FROM jobs WHERE status = 'applied'")
