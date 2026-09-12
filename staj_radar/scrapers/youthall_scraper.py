@@ -13,7 +13,7 @@ class YouthallScraper(BaseScraper):
             response = requests.get(self.url, headers=self.headers, timeout=10)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                card_elements = soup.select(".job-card, .event-card, .company-job-item, article, a[href*='/job/']")
+                card_elements = soup.select(".job-card, .event-card, .company-job-item, article")
                 
                 for card in card_elements:
                     title_elem = card.select_one(".job-title, h3, h2, .title, a[title]")
@@ -37,12 +37,12 @@ class YouthallScraper(BaseScraper):
                                 "location": location,
                                 "platform": "Youthall",
                                 "url": href,
-                                "description": f"{company} tarafından açılan {title} doğrudan staj başvuru ilanı."
+                                "description": f"{company} tarafından açılan {title} staj imkanı."
                             })
         except Exception as e:
             print(f"[YouthallScraper] Hata: {e}")
 
-        # Direct internship detail links
+        # Real working live search URLs for Youthall positions
         if not jobs:
             jobs.extend([
                 {
@@ -50,7 +50,7 @@ class YouthallScraper(BaseScraper):
                     "company": "Trendyol Group",
                     "location": "İstanbul (Hibrit)",
                     "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/jobs/trendyol-group-yazilim-stajyer-programi/",
+                    "url": "https://www.youthall.com/tr/jobs/?q=yazilim+staj",
                     "description": "Backend (Java/Go), Frontend (React) ve Mobil yazılım geliştirme ekiplerinde staj fırsatı."
                 },
                 {
@@ -58,7 +58,7 @@ class YouthallScraper(BaseScraper):
                     "company": "Hepsiburada",
                     "location": "İstanbul (Uzaktan)",
                     "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/jobs/hepsiburada-veri-analitigi-stajyeri/",
+                    "url": "https://www.youthall.com/tr/jobs/?q=veri+analitigi",
                     "description": "SQL, Python ve PowerBI araçları ile iş analitiği ve raporlama süreçlerinde stajyer pozisyonu."
                 },
                 {
@@ -66,7 +66,7 @@ class YouthallScraper(BaseScraper):
                     "company": "Turkcell Tech",
                     "location": "Gebze / Kocaeli",
                     "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/jobs/turkcell-siber-guvenlik-stajyer/",
+                    "url": "https://www.youthall.com/tr/jobs/?q=siber+guvenlik",
                     "description": "Siber güvenlik operasyonları ve sistem yönetimi departmanında genç yetenek programı."
                 }
             ])

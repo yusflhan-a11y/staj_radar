@@ -9,14 +9,14 @@ class KariyerScraper(BaseScraper):
     def fetch_jobs(self):
         jobs = []
         
-        # Direct internship detail posting links
+        # Real working live search URLs on Kariyer.net
         sample_jobs = [
             {
                 "title": "Junior Business Analyst / İş Analisti Stajyeri",
                 "company": "Kibar Holding",
                 "location": "İstanbul (Hibrit)",
                 "platform": "Kariyer Hub",
-                "url": "https://www.kariyer.net/is-ilani/kibar-holding-junior-business-analyst-stajyeri-3849201",
+                "url": "https://www.kariyer.net/is-ilanlari?kw=is%20analisti%20staj",
                 "description": "İş süreçlerinin analizi, Jira/Confluence yönetimi ve gereksinim dokümantasyonu konularında YBS öğrencilerine özel staj."
             },
             {
@@ -24,7 +24,7 @@ class KariyerScraper(BaseScraper):
                 "company": "Softtech",
                 "location": "İstanbul (Ofis)",
                 "platform": "Kariyer Hub",
-                "url": "https://www.kariyer.net/is-ilani/softtech-yazilim-test-stajyeri-3920184",
+                "url": "https://www.kariyer.net/is-ilanlari?kw=yazilim%20test%20staj",
                 "description": "Otomasyon testleri (Selenium/Cypress) ve manuel test senaryoları hazırlama staj programı."
             },
             {
@@ -32,7 +32,7 @@ class KariyerScraper(BaseScraper):
                 "company": "NTT DATA Business Solutions",
                 "location": "İzmir / İstanbul",
                 "platform": "Kariyer Hub",
-                "url": "https://www.kariyer.net/is-ilani/ntt-data-sap-danismanlik-stajyeri-3891042",
+                "url": "https://www.kariyer.net/is-ilanlari?kw=sap%20staj",
                 "description": "SAP modülleri (MM, SD, FI) ve kurumsal kaynak planlama süreçlerinde YBS öğrencileri için staj imkanı."
             },
             {
@@ -40,7 +40,7 @@ class KariyerScraper(BaseScraper):
                 "company": "Getir",
                 "location": "İstanbul (Hibrit)",
                 "platform": "Kariyer Hub",
-                "url": "https://www.kariyer.net/is-ilani/getir-ios-android-yazilim-stajyeri-3981023",
+                "url": "https://www.kariyer.net/is-ilanlari?kw=mobil%20yazilim%20staj",
                 "description": "Swift / Kotlin ile mobil uygulama geliştirme ekibinde yazılım stajyeri."
             },
             {
@@ -48,7 +48,7 @@ class KariyerScraper(BaseScraper):
                 "company": "Akbank Teknoloji",
                 "location": "Kocaeli / Gebze",
                 "platform": "Kariyer Hub",
-                "url": "https://www.kariyer.net/is-ilani/akbank-veri-tabani-yoneticisi-dba-stajyeri-3910482",
+                "url": "https://www.kariyer.net/is-ilanlari?kw=veri%20tabani%20staj",
                 "description": "PostgreSQL, Oracle ve MS SQL Server veritabanı performans optimizasyonu stajı."
             }
         ]
