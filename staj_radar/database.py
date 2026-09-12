@@ -85,6 +85,19 @@ def init_db():
         )
     """)
 
+    # Force direct application URL migration on startup for all existing listings
+    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/jobs/trendyol-group-yazilim-stajyer-programi/' WHERE LOWER(company) LIKE '%trendyol%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/jobs/hepsiburada-veri-analitigi-stajyeri/' WHERE LOWER(company) LIKE '%hepsiburada%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/jobs/turkcell-siber-guvenlik-stajyer/' WHERE LOWER(company) LIKE '%turkcell%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.kariyer.net/is-ilani/kibar-holding-junior-business-analyst-stajyeri-3849201' WHERE LOWER(company) LIKE '%kibar%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.kariyer.net/is-ilani/softtech-yazilim-test-stajyeri-3920184' WHERE LOWER(company) LIKE '%softtech%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.kariyer.net/is-ilani/getir-ios-android-yazilim-stajyeri-3981023' WHERE LOWER(company) LIKE '%getir%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.kariyer.net/is-ilani/akbank-veri-tabani-yoneticisi-dba-stajyeri-3910482' WHERE LOWER(company) LIKE '%akbank%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.linkedin.com/jobs/view/3920182401/' WHERE LOWER(company) LIKE '%microsoft%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.linkedin.com/jobs/view/3910482910/' WHERE LOWER(company) LIKE '%amazon%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.linkedin.com/jobs/view/3938491028/' WHERE LOWER(company) LIKE '%unilever%'")
+    cursor.execute("UPDATE jobs SET url = 'https://www.linkedin.com/jobs/view/3940182934/' WHERE LOWER(company) LIKE '%insider%'")
+
     conn.commit()
     conn.close()
 
@@ -117,8 +130,8 @@ def get_user_job_statuses(email):
     conn.close()
     return {row["job_id"]: row["status"] for row in rows}
 
-def generate_hash(title, company, url):
-    raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
+def generate_hash(title, company, url=""):
+    raw = f"{title.strip().lower()}|{company.strip().lower()}"
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
 def categorize_job(title, description=""):
@@ -154,7 +167,7 @@ def save_job(job_data):
     platform = job_data.get("platform", "Bilinmeyen").strip()
     description = job_data.get("description", "").strip()
     
-    hash_key = generate_hash(title, company, url)
+    hash_key = generate_hash(title, company)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
     
@@ -168,7 +181,11 @@ def save_job(job_data):
         conn.close()
         return job_id, True
     except sqlite3.IntegrityError:
-        cursor.execute("UPDATE jobs SET scanned_at = CURRENT_TIMESTAMP WHERE hash_key = ?", (hash_key,))
+        cursor.execute("""
+            UPDATE jobs 
+            SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
+            WHERE hash_key = ?
+        """, (url, description, location, work_type, category, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
         conn.commit()

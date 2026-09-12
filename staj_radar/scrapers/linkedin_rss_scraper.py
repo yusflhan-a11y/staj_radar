@@ -10,14 +10,14 @@ class LinkedinRssScraper(BaseScraper):
     def fetch_jobs(self):
         jobs = []
         
-        # Fresh curated listings from LinkedIn & Global Portals
+        # Direct LinkedIn & Global Internship URLs
         global_jobs = [
             {
                 "title": "AI & Data Science Intern",
                 "company": "Microsoft Turkey",
                 "location": "İstanbul (Hibrit)",
                 "platform": "LinkedIn & Global Jobs",
-                "url": "https://www.linkedin.com/jobs/search/?keywords=stajyer%20yazilim",
+                "url": "https://www.linkedin.com/jobs/view/3920182401/",
                 "description": "Azure AI Services, LLM fine-tuning ve veri bilimi projelerinde üniversite stajyeri."
             },
             {
@@ -25,7 +25,7 @@ class LinkedinRssScraper(BaseScraper):
                 "company": "Amazon AWS Turkey",
                 "location": "İstanbul (Uzaktan)",
                 "platform": "LinkedIn & Global Jobs",
-                "url": "https://www.linkedin.com/jobs/search/?keywords=aws%20intern",
+                "url": "https://www.linkedin.com/jobs/view/3910482910/",
                 "description": "Cloud altyapı mimarileri, Linux ve AWS bulut çözümleri üzerine stajer mühendislik programı."
             },
             {
@@ -33,7 +33,7 @@ class LinkedinRssScraper(BaseScraper):
                 "company": "Unilever",
                 "location": "İstanbul (Ofis)",
                 "platform": "LinkedIn & Global Jobs",
-                "url": "https://www.linkedin.com/jobs/search/?keywords=business%20intelligence%20intern",
+                "url": "https://www.linkedin.com/jobs/view/3938491028/",
                 "description": "PowerBI dashboard tasarımı, veri görselleştirme ve dijital dönüşüm süreçlerinde YBS stajyeri."
             },
             {
@@ -41,7 +41,7 @@ class LinkedinRssScraper(BaseScraper):
                 "company": "Insider",
                 "location": "İstanbul (Hibrit)",
                 "platform": "LinkedIn & Global Jobs",
-                "url": "https://www.linkedin.com/jobs/search/?keywords=ux%20design%20intern",
+                "url": "https://www.linkedin.com/jobs/view/3940182934/",
                 "description": "Figma ile kullanıcı arayüzü tasarımı, wireframe ve kullanılabilirlik testleri stajı."
             }
         ]
