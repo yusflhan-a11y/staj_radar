@@ -1,58 +1,52 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import save_job, add_notification, record_scan_start, record_scan_end
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from scrapers.youthall_scraper import YouthallScraper
-from scrapers.github_scraper import GithubScraper
 from scrapers.kariyer_scraper import KariyerScraper
-from scrapers.linkedin_rss_scraper import LinkedinRssScraper
+import database
 
 def run_all_scrapers():
-    scan_id = record_scan_start()
+    print("[ScraperRunner] Scrapers başlatılıyor...")
+    scan_id = database.record_scan_start()
+    
     scrapers = [
         YouthallScraper(),
-        GithubScraper(),
-        KariyerScraper(),
-        LinkedinRssScraper()
+        KariyerScraper()
     ]
     
     total_found = 0
-    new_jobs_added = 0
+    total_added = 0
     
     for scraper in scrapers:
-        print(f"[{scraper.name}] Tarama başlatılıyor...")
         try:
+            print(f"[ScraperRunner] {scraper.platform_name} taranıyor...")
             jobs = scraper.fetch_jobs()
             total_found += len(jobs)
-            for job in jobs:
-                job_id, is_new = save_job(job)
-                if is_new:
-                    new_jobs_added += 1
-        except Exception as e:
-            print(f"[{scraper.name}] Tarama hatası: {e}")
             
-    record_scan_end(scan_id, total_found, new_jobs_added)
+            for job in jobs:
+                # Ensure URL is direct and valid
+                if job.get("url") and job["url"].startswith("http"):
+                    job_id, is_new = database.save_job(job)
+                    if is_new:
+                        total_added += 1
+        except Exception as e:
+            print(f"[ScraperRunner] {scraper.platform_name} hatası: {e}")
+            
+    database.record_scan_end(scan_id, total_found, total_added)
     
-    # Trigger in-app notification if new jobs found or summary scan completed
-    if new_jobs_added > 0:
-        add_notification(
-            title="🎯 Yeni Staj İlanları Bulundu!",
-            message=f"Günlük taramada {new_jobs_added} adet yeni staj ilanı listelerinize eklendi.",
-            n_type="new_jobs"
-        )
-    else:
-        add_notification(
-            title="🔍 Tarama Tamamlandı",
-            message=f"Tüm platformlar tarandı ({total_found} ilan tarandı). Yeni ilan eklenmedi.",
+    if total_added > 0:
+        database.add_notification(
+            title=f"🔔 {total_added} Yeni Staj İlanı Eklendi!",
+            message=f"Bugünkü taramada {total_added} yeni doğrudan başvurulabilir staj ilanı bulundu.",
             n_type="info"
         )
         
-    print(f"Tarama Tamamlandı! Toplam Taranan: {total_found}, Yeni Eklenen: {new_jobs_added}")
-    return {
-        "total_found": total_found,
-        "new_jobs_added": new_jobs_added
-    }
+    print(f"[ScraperRunner] Tarama tamamlandı. Bulunan: {total_found}, Yeni Eklenen: {total_added}")
+    return total_found, total_added
 
 if __name__ == "__main__":
     run_all_scrapers()

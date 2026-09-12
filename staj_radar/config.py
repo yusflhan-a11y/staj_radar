@@ -3,35 +3,25 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.path.join(BASE_DIR, "staj_radar.db")
 
-# Category Keywords for Automatic Categorization
 CATEGORY_KEYWORDS = {
     "computer_engineering": [
-        "yazılım", "software", "backend", "frontend", "fullstack", "full stack",
-        "python", "java", "c++", "c#", ".net", "react", "vue", "angular", "node",
-        "developer", "geliştirici", "geliştirme", "mobil", "android", "ios", "flutter",
-        "ai", "yapay zeka", "machine learning", "makine öğrenmesi", "data engineer",
-        "veri mühendisi", "cyber security", "siber güvenlik", "devops", "cloud",
-        "gömülü", "embedded", "qa", "test mühendisi", "test engineer"
+        "yazılım", "software", "backend", "frontend", "fullstack", "mobile", "mobil",
+        "android", "ios", "react", "node", "python", "java", "c++", "c#", ".net",
+        "developer", "geliştirici", "muhendis", "mühendis", "devops", "cloud",
+        "cyber", "siber", "yapay zeka", "ai", "machine learning", "veri bilim", "data science"
     ],
     "mis": [
-        "iş analisti", "business analyst", "veri analisti", "data analyst",
-        "ürün yönetimi", "product manager", "product management", "proje yönetimi",
-        "project manager", "it specialist", "bilgi teknolojileri", "sistem analisti",
-        "system analyst", "erp", "sap", "bi", "business intelligence", "iş zekası",
-        "dijital dönüşüm", "digital transformation", "ui/ux", "ux", "ui", "crm",
-        "veritabanı", "database admin", "süreç analisti", "process analyst"
+        "yönetim bilişim", "ybs", "mis", "iş analist", "business analyst",
+        "veri analist", "data analyst", "iş zekası", "bi ", "powerbi", "tableau",
+        "ürün yönet", "product manager", "project manager", "proje yönet",
+        "erp", "sap", "crm", "sistem analist", "dijital dönüşüm", "proje staj"
     ]
 }
 
-# General Internship Keywords to Filter Relevant Listings
-INTERNSHIP_KEYWORDS = [
-    "staj", "stajyer", "intern", "internship", "trainee", "genç yetenek",
-    "fellowship", "candidate", "talent", "bootcamp", "aday"
-]
-
-# Work Type Recognition Keywords
 WORK_TYPE_KEYWORDS = {
-    "remote": ["remote", "uzaktan", "evden", "work from home"],
+    "remote": ["uzaktan", "remote", "home office", "evden"],
     "hybrid": ["hibrit", "hybrid", "karma"],
-    "office": ["ofis", "office", "yerinde", "on-site", "onsite"]
+    "office": ["ofis", "office", "yerinde", "ofisten"]
 }
+
+INTERNSHIP_KEYWORDS = ["staj", "intern", "trainee", "genç yetenek", "talent"]

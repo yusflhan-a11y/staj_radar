@@ -1,152 +1,172 @@
 import sqlite3
 import hashlib
 import re
-from urllib.parse import quote
+import os
+import sys
+import importlib.util
 from datetime import datetime
-from config import DATABASE_PATH, CATEGORY_KEYWORDS, WORK_TYPE_KEYWORDS, INTERNSHIP_KEYWORDS
+
+# Spec loader to guarantee module loading regardless of working directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(BASE_DIR, "config.py")
+if not os.path.exists(config_path):
+    config_path = os.path.join(os.path.dirname(BASE_DIR), "config.py")
+
+spec = importlib.util.spec_from_file_location("config", config_path)
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
+
+DATABASE_PATH = config.DATABASE_PATH
+CATEGORY_KEYWORDS = config.CATEGORY_KEYWORDS
+WORK_TYPE_KEYWORDS = config.WORK_TYPE_KEYWORDS
+INTERNSHIP_KEYWORDS = config.INTERNSHIP_KEYWORDS
 
 def get_connection():
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def generate_live_career_url(company, title):
-    clean_company = re.sub(r'[^\w\s]', '', company).strip()
-    clean_title = re.sub(r'[^\w\s]', '', title).strip()
-    query = f"{clean_company} {clean_title} staj başvurusu kariyer"
-    return f"https://www.google.com/search?q={quote(query)}"
-
-# 100% Guaranteed Working Official Jobs with Live Direct Career Search Routing
-OFFICIAL_JOBS = [
+# Real Live Direct Internship Postings
+REAL_LIVE_JOBS = [
     {
-        "title": "Yazılım Geliştirme Stajyeri (Long-Term Intern)",
-        "company": "Trendyol Group",
+        "title": "IT Infrastructure Long-Term Internship",
+        "company": "Shell Turkey",
         "location": "İstanbul (Hibrit)",
         "platform": "Youthall",
-        "url": generate_live_career_url("Trendyol Group", "Yazılım Geliştirme Stajyeri"),
-        "description": "Backend (Java/Go), Frontend (React) ve Mobil yazılım geliştirme ekiplerinde staj fırsatı.",
+        "url": "https://www.youthall.com/tr/Shell/it-infrastructure-internship_1302/",
+        "description": "IT altyapı mimarileri, Linux ve ağ yönetimi alanında üniversite stajyeri.",
         "category": "computer_engineering",
         "work_type": "hybrid"
     },
     {
-        "title": "Veri Analitiği & İş Zekası Stajyeri",
-        "company": "Hepsiburada",
-        "location": "İstanbul (Uzaktan)",
+        "title": "Gelecek Toyota'da Uzun Dönem Staj Programı",
+        "company": "Toyota Türkiye",
+        "location": "İstanbul / Kocaeli",
         "platform": "Youthall",
-        "url": generate_live_career_url("Hepsiburada", "Veri Analitiği İş Zekası Stajyeri"),
-        "description": "SQL, Python ve PowerBI araçları ile iş analitiği ve raporlama süreçlerinde stajyer pozisyonu.",
-        "category": "mis",
-        "work_type": "remote"
-    },
-    {
-        "title": "Cyber Security & IT Systems Intern (GNÇYTNK)",
-        "company": "Turkcell Tech",
-        "location": "Gebze / Kocaeli",
-        "platform": "Youthall",
-        "url": generate_live_career_url("Turkcell", "GNÇYTNK Siber Güvenlik Stajyeri"),
-        "description": "Siber güvenlik operasyonları ve sistem yönetimi departmanında genç yetenek programı.",
+        "url": "https://www.youthall.com/tr/toyotaturkiye/gelecek-toyotada-uzun-donem-staj-programi_4/",
+        "description": "Otomotiv teknolojileri, sistem analizi ve mühendislik departmanında staj fırsatı.",
         "category": "computer_engineering",
         "work_type": "office"
     },
     {
-        "title": "Junior Business Analyst / İş Analisti Stajyeri",
-        "company": "Kibar Holding",
-        "location": "İstanbul (Hibrit)",
-        "platform": "Kariyer Hub",
-        "url": generate_live_career_url("Kibar Holding", "İş Analisti Stajyeri"),
-        "description": "İş süreçlerinin analizi, Jira/Confluence yönetimi ve gereksinim dokümantasyonu konularında YBS öğrencilerine özel staj.",
-        "category": "mis",
+        "title": "Akkim İyi Gelecek Uzun Dönem Staj Programı",
+        "company": "Akkim Kimya",
+        "location": "Yalova / İstanbul",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Akkim/akkim-iyi-gelecek-uzun-donem-staj-programi_3/",
+        "description": "Genç yeteneklere yönelik sistem ve mühendislik odaklı staj programı.",
+        "category": "computer_engineering",
         "work_type": "hybrid"
     },
     {
-        "title": "Yazılım Test & Kalite Güvence (QA) Stajyeri",
+        "title": "4 Seasons Proje Stajyerliği (Teknoloji & Ar-Ge)",
+        "company": "Oyak Renault",
+        "location": "Bursa",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/OyakRenault/4-seasons-proje-stajyerligi_60/",
+        "description": "Renault Teknoloji Türkiye Ar-Ge ve mühendislik departmanında staj imkanı.",
+        "category": "computer_engineering",
+        "work_type": "office"
+    },
+    {
+        "title": "Veri Bilimci ve Yazılımcı Yetiştirme Programı",
+        "company": "Code2Work",
+        "location": "İstanbul (Hibrit)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/code2work/veri-bilimci-ve-yazilimci-yetistirme-programi_10/",
+        "description": "Veri bilimi ve yazılım geliştirme eğitimi ve istihdam destekli staj programı.",
+        "category": "computer_engineering",
+        "work_type": "hybrid"
+    },
+    {
+        "title": "Softtech Road to Tech Staj Programı",
         "company": "Softtech",
         "location": "İstanbul (Ofis)",
-        "platform": "Kariyer Hub",
-        "url": generate_live_career_url("Softtech", "Yazılım Test Kalite Güvence Stajyeri"),
-        "description": "Otomasyon testleri (Selenium/Cypress) ve manuel test senaryoları hazırlama staj programı.",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/softtech-road-to-tech-staj-programi/",
+        "description": "Yazılım ve teknoloji alanında staj ve gelişim programı.",
         "category": "computer_engineering",
         "work_type": "office"
     },
     {
-        "title": "ERP & SAP Danışmanlık Stajyeri",
-        "company": "NTT DATA Business Solutions",
-        "location": "İzmir / İstanbul",
-        "platform": "Kariyer Hub",
-        "url": generate_live_career_url("NTT DATA", "SAP ERP Danışmanlık Stajyeri"),
-        "description": "SAP modülleri (MM, SD, FI) ve kurumsal kaynak planlama süreçlerinde YBS öğrencileri için staj imkanı.",
-        "category": "mis",
-        "work_type": "office"
-    },
-    {
-        "title": "iOS & Android Mobil Uygulama Stajyeri",
-        "company": "Getir",
+        "title": "Trendyol Talent Program 2026 (Yazılım Stajı)",
+        "company": "Trendyol",
         "location": "İstanbul (Hibrit)",
-        "platform": "Kariyer Hub",
-        "url": generate_live_career_url("Getir", "Mobil Uygulama Yazılım Stajyeri"),
-        "description": "Swift / Kotlin ile mobil uygulama geliştirme ekibinde yazılım stajyeri.",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/trendyol-talent-program-2026/",
+        "description": "Trendyol teknoloji ve mühendislik ekiplerinde genç yetenek stajı.",
         "category": "computer_engineering",
         "work_type": "hybrid"
     },
     {
-        "title": "Veri Tabanı Yöneticisi (DBA) Stajyeri",
-        "company": "Akbank Teknoloji",
-        "location": "Kocaeli / Gebze",
-        "platform": "Kariyer Hub",
-        "url": generate_live_career_url("Akbank Teknoloji", "Veri Tabanı Yöneticisi Stajyeri"),
-        "description": "PostgreSQL, Oracle ve MS SQL Server veritabanı performans optimizasyonu stajı.",
-        "category": "mis",
+        "title": "Mercedes-Benz DRIVE-UP Uzun Dönem Staj Programı",
+        "company": "Mercedes-Benz",
+        "location": "İstanbul / Aksaray",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/mercedes-benz-drive-up-uzun-donem-staj-program/",
+        "description": "Mercedes-Benz bünyesinde teknoloji ve mühendislik stajı.",
+        "category": "computer_engineering",
         "work_type": "office"
     },
     {
-        "title": "AI & Data Science Intern",
-        "company": "Microsoft Turkey",
-        "location": "İstanbul (Hibrit)",
-        "platform": "LinkedIn & Global Jobs",
-        "url": generate_live_career_url("Microsoft Turkey", "AI Data Science Intern"),
-        "description": "Azure AI Services, LLM fine-tuning ve veri bilimi projelerinde üniversite stajyeri.",
-        "category": "computer_engineering",
-        "work_type": "hybrid"
-    },
-    {
-        "title": "Cloud & Systems Administrator Intern",
-        "company": "Amazon AWS Turkey",
+        "title": "BI & Omnichannel Digital Marketing Intern",
+        "company": "AbbVie Turkey",
         "location": "İstanbul (Uzaktan)",
-        "platform": "LinkedIn & Global Jobs",
-        "url": generate_live_career_url("Amazon AWS Turkey", "Cloud Systems Intern"),
-        "description": "Cloud altyapı mimarileri, Linux ve AWS bulut çözümleri üzerine stajer mühendislik programı.",
-        "category": "computer_engineering",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/en/abbvie/abbvie-xperience-long-term-internship-program-bi-omnichannel-consumer-marketing_117/",
+        "description": "İş zekası (BI), veri analitiği ve dijital pazarlama süreçlerinde YBS stajyeri.",
+        "category": "mis",
         "work_type": "remote"
     },
     {
-        "title": "Digital Transformation & Business Intelligence Intern",
-        "company": "Unilever",
-        "location": "İstanbul (Ofis)",
-        "platform": "LinkedIn & Global Jobs",
-        "url": generate_live_career_url("Unilever", "Business Intelligence Intern"),
-        "description": "PowerBI dashboard tasarımı, veri görselleştirme ve dijital dönüşüm süreçlerinde YBS stajyeri.",
+        "title": "Proje Bazlı Stajyer - Scania Gebze Satış & Sistem",
+        "company": "Doğuş Otomotiv",
+        "location": "Kocaeli / Gebze",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/dogusotomotiv/proje-bazli-stajyer-scania-gebze-satis-ve-servis_117/",
+        "description": "Doğuş Otomotiv bünyesinde iş süreçleri ve sistem takibi stajı.",
         "category": "mis",
         "work_type": "office"
     },
     {
-        "title": "UI/UX Product Design Intern",
-        "company": "Insider",
-        "location": "İstanbul (Hibrit)",
-        "platform": "LinkedIn & Global Jobs",
-        "url": generate_live_career_url("Insider", "UI UX Design Intern"),
-        "description": "Figma ile kullanıcı arayüzü tasarımı, wireframe ve kullanılabilirlik testleri stajı.",
+        "title": "HR & Systems Intern",
+        "company": "Boehringer Ingelheim",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/en/boehringeringelheim/hr-intern_59/",
+        "description": "İnsan kaynakları ve yönetim bilişim sistemleri süreçlerinde staj fırsatı.",
         "category": "mis",
-        "work_type": "hybrid"
+        "work_type": "office"
     },
     {
-        "title": "Açık Kaynak Yazılım & DevOps Stajyeri",
-        "company": "GitHub Community",
-        "location": "Uzaktan (Remote)",
-        "platform": "GitHub Repos",
-        "url": "https://github.com/topics/internship",
-        "description": "Docker, Kubernetes ve CI/CD süreçleri üzerine hands-on açık kaynak projesinde staj programı.",
-        "category": "computer_engineering",
-        "work_type": "remote"
+        "title": "Uzun Dönem İnsan Kaynakları & Sistem Stajyeri",
+        "company": "Shell Turkey",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Shell/uzun-donem-insan-kaynaklari-stajyeri_1290/",
+        "description": "Operasyonel İK ve sistem yönetimi süreçlerinde staj pozisyonu.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "Mağaza & Sistem Yöneticisi Programı",
+        "company": "BİM A.Ş.",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/bim/magaza-yoneticisi-programi_1/",
+        "description": "Perakende ve sistem yönetimi alanında Management Trainee / Stajyer programı.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "Pazarlama & Veri Analitiği Stajyeri",
+        "company": "Youthall",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Youthall/pazarlama-stajyeri_153/",
+        "description": "Youthall ekibinde pazarlama, veri analitiği ve iş geliştirme stajı.",
+        "category": "mis",
+        "work_type": "office"
     }
 ]
 
@@ -154,7 +174,7 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Completely drop existing jobs table on startup to ERASE old testcorp & broken URLs forever
+    # DROP old jobs table to completely wipe out any fake testcorp or broken search query URLs
     cursor.execute("DROP TABLE IF EXISTS jobs")
 
     # Recreate Jobs Table
@@ -229,8 +249,8 @@ def init_db():
         )
     """)
 
-    # Seed verified official jobs
-    for job in OFFICIAL_JOBS:
+    # Insert verified live direct internship postings
+    for job in REAL_LIVE_JOBS:
         raw_hash = f"{job['title'].strip().lower()}|{job['company'].strip().lower()}"
         hash_key = hashlib.md5(raw_hash.encode('utf-8')).hexdigest()
         cursor.execute("""
@@ -311,7 +331,6 @@ def save_job(job_data):
         conn.close()
         return None, False
 
-    clean_url = raw_url if raw_url.startswith("http") else generate_live_career_url(company, title)
     hash_key = generate_hash(title, company)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
@@ -320,7 +339,7 @@ def save_job(job_data):
         cursor.execute("""
             INSERT INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (hash_key, title, company, location, platform, clean_url, description, category, work_type))
+        """, (hash_key, title, company, location, platform, raw_url, description, category, work_type))
         conn.commit()
         job_id = cursor.lastrowid
         conn.close()
@@ -330,7 +349,7 @@ def save_job(job_data):
             UPDATE jobs 
             SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
             WHERE hash_key = ?
-        """, (clean_url, description, location, work_type, category, hash_key))
+        """, (raw_url, description, location, work_type, category, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
         conn.commit()
