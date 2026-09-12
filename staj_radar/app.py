@@ -16,7 +16,6 @@ database.init_db()
 def start_background_scheduler(interval_hours=6):
     def scheduler_loop():
         while True:
-            # Sleep for interval_hours
             time.sleep(interval_hours * 3600)
             print("⏰ Otomatik periyodik tarama başlatılıyor...")
             try:
@@ -27,7 +26,6 @@ def start_background_scheduler(interval_hours=6):
     thread = threading.Thread(target=scheduler_loop, daemon=True)
     thread.start()
 
-# Start background scheduler (every 6 hours)
 start_background_scheduler(interval_hours=6)
 
 @app.route("/")
@@ -55,6 +53,21 @@ def api_get_jobs():
     )
     return jsonify({"success": True, "count": len(jobs), "jobs": jobs})
 
+@app.route("/api/notes", methods=["GET", "POST"])
+def api_notes():
+    if request.method == "POST":
+        data = request.json or {}
+        author = data.get("author", "Anonim Öğrenci")
+        message = data.get("message", "")
+        if not message.strip():
+            return jsonify({"success": False, "error": "Not içeriği boş olamaz."}), 400
+        
+        note_id = database.add_note(author, message)
+        return jsonify({"success": True, "note_id": note_id})
+    else:
+        notes = database.get_notes(limit=50)
+        return jsonify({"success": True, "notes": notes})
+
 @app.route("/api/jobs/export", methods=["GET"])
 def api_export_jobs():
     category = request.args.get("category")
@@ -71,7 +84,6 @@ def api_export_jobs():
             headers={"Content-Disposition": "attachment;filename=staj_ilanlari.json"}
         )
 
-    # Default CSV Export
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["ID", "İlan Başlığı", "Şirket", "Şehir/Konum", "Platform", "Çalışma Türü", "Kategori", "Başvuru Linki", "Tarih"])
@@ -90,7 +102,7 @@ def api_export_jobs():
         ])
 
     return Response(
-        output.getvalue().encode('utf-8-sig'),  # utf-8-sig for Excel compatibility in Turkish
+        output.getvalue().encode('utf-8-sig'),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=staj_ilanlari.csv"}
     )
@@ -105,17 +117,6 @@ def api_update_job_status(job_id):
     database.update_job_status(job_id, new_status)
     return jsonify({"success": True, "job_id": job_id, "new_status": new_status})
 
-@app.route("/api/notifications", methods=["GET"])
-def api_get_notifications():
-    notifications = database.get_notifications()
-    unread_count = database.get_unread_notification_count()
-    return jsonify({"success": True, "notifications": notifications, "unread_count": unread_count})
-
-@app.route("/api/notifications/read", methods=["POST"])
-def api_mark_notifications_read():
-    database.mark_notifications_read()
-    return jsonify({"success": True})
-
 @app.route("/api/stats", methods=["GET"])
 def api_get_stats():
     stats = database.get_stats()
@@ -123,12 +124,16 @@ def api_get_stats():
 
 @app.route("/api/scan", methods=["POST"])
 def api_trigger_scan():
-    def async_scan():
-        run_all_scrapers()
-
-    thread = threading.Thread(target=async_scan)
-    thread.start()
-    return jsonify({"success": True, "message": "Tarama başlatıldı! Tamamlandığında bildirimlerde görünecektir."})
+    try:
+        res = run_all_scrapers()
+        return jsonify({
+            "success": True,
+            "total_found": res.get("total_found", 0),
+            "new_jobs_added": res.get("new_jobs_added", 0),
+            "message": f"Tarama tamamlandı! {res.get('new_jobs_added', 0)} yeni ilan bulundu."
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))

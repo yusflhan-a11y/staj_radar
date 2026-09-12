@@ -23,11 +23,21 @@ def init_db():
             platform TEXT NOT NULL,
             url TEXT NOT NULL,
             description TEXT,
-            category TEXT NOT NULL, -- 'computer_engineering', 'mis', 'both', 'general'
-            work_type TEXT DEFAULT 'office', -- 'remote', 'hybrid', 'office'
-            status TEXT DEFAULT 'new', -- 'new', 'saved', 'applied', 'ignored'
+            category TEXT NOT NULL,
+            work_type TEXT DEFAULT 'office',
+            status TEXT DEFAULT 'new',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Shared Notes / Bulletin Board Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            author TEXT NOT NULL DEFAULT 'Anonim',
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -37,7 +47,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             message TEXT NOT NULL,
-            type TEXT DEFAULT 'info', -- 'info', 'success', 'new_jobs'
+            type TEXT DEFAULT 'info',
             is_read INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -75,7 +85,7 @@ def categorize_job(title, description=""):
     elif is_mis:
         return "mis"
     else:
-        return "both"  # Default to both for general internships so it's not hidden
+        return "both"
 
 def detect_work_type(title, description="", location=""):
     content = f"{title} {description} {location}".lower()
@@ -85,10 +95,6 @@ def detect_work_type(title, description="", location=""):
     return "office"
 
 def save_job(job_data):
-    """
-    job_data dict: title, company, location, platform, url, description (optional), category (optional), work_type (optional)
-    Returns tuple: (job_id, is_new)
-    """
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -113,7 +119,6 @@ def save_job(job_data):
         conn.close()
         return job_id, True
     except sqlite3.IntegrityError:
-        # Job already exists, update scanned_at timestamp
         cursor.execute("UPDATE jobs SET scanned_at = CURRENT_TIMESTAMP WHERE hash_key = ?", (hash_key,))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
@@ -171,6 +176,24 @@ def update_job_status(job_id, status):
     conn.commit()
     conn.close()
     return True
+
+# Shared Notes / Bulletin Board Functions
+def add_note(author, message):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO notes (author, message) VALUES (?, ?)", (author.strip() or "Anonim", message.strip()))
+    conn.commit()
+    note_id = cursor.lastrowid
+    conn.close()
+    return note_id
+
+def get_notes(limit=50):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM notes ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
 
 def add_notification(title, message, n_type='info'):
     conn = get_connection()

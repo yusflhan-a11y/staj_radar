@@ -58,7 +58,7 @@
             <div class="stat-card">
                 <div class="stat-icon saved">⭐</div>
                 <div class="stat-info">
-                    <h4>Takip / Başvuru</h4>
+                    <h4>Benim Başvuru / Takibim</h4>
                     <div class="stat-value" id="stat-saved-applied">0</div>
                 </div>
             </div>
@@ -76,7 +76,10 @@
                     <span class="badge-counter" id="badge-mis">0</span>
                 </button>
                 <button class="tab-btn" data-tab="saved_applied" onclick="switchTab('saved_applied')">
-                    <span>⭐ Kaydedilen & Başvurulanlar</span>
+                    <span>⭐ Benim Kaydettiklerim & Başvurularım</span>
+                </button>
+                <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')">
+                    <span>📌 Ortak Pano & Notlar</span>
                 </button>
                 <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">
                     <span>🔔 Bildirimler</span>
@@ -114,10 +117,30 @@
             <!-- Dynamic Job Cards Rendered Here -->
         </div>
 
-        <!-- Notifications View (Hidden by default) -->
+        <!-- Notes / Bulletin Board View -->
+        <div id="notes-container" style="display: none;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; backdrop-filter: blur(12px);">
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📌 Ortak Not & Duyuru Panosu</span>
+                </h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.2rem;">
+                    Sitedeki diğer ziyaretçilerle staj başvuru tüyoları, mülakat tecrübeleri veya ilan duyurularını buradan paylaşabilirsiniz.
+                </p>
+                <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem;">
+                    <input type="text" id="note-author" placeholder="İsminiz / Rumuz (Örn: Yusuf)" style="width: 220px; padding: 0.65rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; outline: none;">
+                    <input type="text" id="note-message" placeholder="Notunuzu veya duyurunuzu yazın..." style="flex: 1; min-width: 260px; padding: 0.65rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: white; outline: none;">
+                    <button class="btn btn-primary" onclick="submitNote()">📌 Paylaş</button>
+                </div>
+            </div>
+            <div id="notes-list">
+                <!-- Notes list rendered here -->
+            </div>
+        </div>
+
+        <!-- Notifications View -->
         <div id="notifications-container" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="font-size: 1.1rem; font-weight: 700;">Uygulama İçi Tarama Bildirimleri</h3>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">Cihazınıza Özel Tarama Bildirimleri</h3>
                 <button class="btn btn-secondary" onclick="markNotificationsRead()">Tümünü Okundu İşaretle</button>
             </div>
             <div id="notifications-list">
@@ -131,15 +154,52 @@
         let currentTab = 'computer_engineering';
         let searchTimeout = null;
 
+        function getLocalStatus(jobId) {
+            return localStorage.getItem(`job_status_${jobId}`) || 'new';
+        }
+
+        function setLocalStatus(jobId, status) {
+            if (status === 'new') {
+                localStorage.removeItem(`job_status_${jobId}`);
+            } else {
+                localStorage.setItem(`job_status_${jobId}`, status);
+            }
+        }
+
+        function getLocalNotifications() {
+            try {
+                return JSON.parse(localStorage.getItem('local_notifications') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function addLocalNotification(title, message) {
+            const notifs = getLocalNotifications();
+            notifs.unshift({
+                id: Date.now(),
+                title: title,
+                message: message,
+                is_read: false,
+                created_at: new Date().toISOString()
+            });
+            localStorage.setItem('local_notifications', JSON.stringify(notifs.slice(0, 30)));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadStats();
             loadJobs();
             loadNotifications();
 
-            // Auto refresh stats & notifications every 15s
+            if (getLocalNotifications().length === 0) {
+                addLocalNotification("👋 Staj Radar'a Hoş Geldiniz!", "Tarama yapmak istediğinizde '⚡ Şimdi Tara' butonuna basabilir veya sekmeler arasında gezinebilirsiniz.");
+                loadNotifications();
+            }
+
             setInterval(() => {
                 loadStats();
-                loadNotifications();
+                if (currentTab === 'notes') loadNotes();
+                else loadNotifications();
             }, 15000);
         });
 
@@ -152,16 +212,25 @@
             const filterBar = document.getElementById('filter-bar');
             const jobsContainer = document.getElementById('jobs-container');
             const notifContainer = document.getElementById('notifications-container');
+            const notesContainer = document.getElementById('notes-container');
 
             if (tab === 'notifications') {
                 filterBar.style.display = 'none';
                 jobsContainer.style.display = 'none';
+                notesContainer.style.display = 'none';
                 notifContainer.style.display = 'block';
                 loadNotifications();
+            } else if (tab === 'notes') {
+                filterBar.style.display = 'none';
+                jobsContainer.style.display = 'none';
+                notifContainer.style.display = 'none';
+                notesContainer.style.display = 'block';
+                loadNotes();
             } else {
                 filterBar.style.display = 'flex';
                 jobsContainer.style.display = 'grid';
                 notifContainer.style.display = 'none';
+                notesContainer.style.display = 'none';
                 loadJobs();
             }
         }
@@ -183,14 +252,25 @@
                     document.getElementById('stat-ce').innerText = s.ce_jobs;
                     document.getElementById('stat-mis').innerText = s.mis_jobs;
                     document.getElementById('stat-today').innerText = s.today_jobs;
-                    document.getElementById('stat-saved-applied').innerText = s.saved_jobs + s.applied_jobs;
+
+                    let personalCount = 0;
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith('job_status_')) {
+                            const val = localStorage.getItem(key);
+                            if (val === 'saved' || val === 'applied') personalCount++;
+                        }
+                    }
+                    document.getElementById('stat-saved-applied').innerText = personalCount;
 
                     document.getElementById('badge-ce').innerText = s.ce_jobs;
                     document.getElementById('badge-mis').innerText = s.mis_jobs;
 
+                    const notifs = getLocalNotifications();
+                    const unread = notifs.filter(n => !n.is_read).length;
                     const notifBadge = document.getElementById('badge-notifications');
-                    if (s.unread_notifications > 0) {
-                        notifBadge.innerText = s.unread_notifications;
+                    if (unread > 0) {
+                        notifBadge.innerText = unread;
                         notifBadge.style.display = 'inline-block';
                     } else {
                         notifBadge.style.display = 'none';
@@ -212,8 +292,6 @@
             let url = '/api/jobs?';
             if (currentTab === 'computer_engineering' || currentTab === 'mis') {
                 url += `category=${currentTab}&`;
-            } else if (currentTab === 'saved_applied') {
-                url += `status=saved&status=applied&`;
             }
 
             if (search) url += `search=${encodeURIComponent(search)}&`;
@@ -225,13 +303,34 @@
                 const data = await res.json();
 
                 if (data.success && data.jobs.length > 0) {
-                    container.innerHTML = data.jobs.map(job => renderJobCard(job)).join('');
+                    let filteredJobs = data.jobs;
+
+                    if (currentTab === 'saved_applied') {
+                        filteredJobs = filteredJobs.filter(job => {
+                            const st = getLocalStatus(job.id);
+                            return st === 'saved' || st === 'applied';
+                        });
+                    } else {
+                        filteredJobs = filteredJobs.filter(job => getLocalStatus(job.id) !== 'ignored');
+                    }
+
+                    if (filteredJobs.length > 0) {
+                        container.innerHTML = filteredJobs.map(job => renderJobCard(job)).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">🔍</div>
+                                <h3>İlan Bulunamadı</h3>
+                                <p>Aradığınız kriterlere veya kişisel listenize uygun staj ilanı bulunamadı.</p>
+                            </div>
+                        `;
+                    }
                 } else {
                     container.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-icon">🔍</div>
                             <h3>İlan Bulunamadı</h3>
-                            <p>Aradığınız kriterlere uygun staj ilanı bulunamadı. "Şimdi Tara" butonuna basarak tarama gerçekleştirebilirsiniz.</p>
+                            <p>Aradığınız kriterlere uygun staj ilanı bulunamadı.</p>
                         </div>
                     `;
                 }
@@ -241,8 +340,9 @@
         }
 
         function renderJobCard(job) {
-            const isSaved = job.status === 'saved';
-            const isApplied = job.status === 'applied';
+            const userStatus = getLocalStatus(job.id);
+            const isSaved = userStatus === 'saved';
+            const isApplied = userStatus === 'applied';
             
             const workTypeLabel = job.work_type === 'remote' ? '🌐 Uzaktan' : (job.work_type === 'hybrid' ? '🏢 Hibrit' : '📍 Ofis');
             const workTypeClass = job.work_type === 'remote' ? 'remote' : (job.work_type === 'hybrid' ? 'hybrid' : '');
@@ -288,58 +388,101 @@
             `;
         }
 
-        async function updateStatus(jobId, newStatus) {
-            try {
-                const res = await fetch(`/api/jobs/${jobId}/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    if (newStatus === 'ignored' || currentTab === 'saved_applied') {
-                        loadJobs();
-                    } else {
-                        loadJobs();
-                    }
-                    loadStats();
-                }
-            } catch (err) {
-                console.error("Status güncellenemedi:", err);
-            }
+        function updateStatus(jobId, newStatus) {
+            setLocalStatus(jobId, newStatus);
+            loadJobs();
+            loadStats();
         }
 
-        async function loadNotifications() {
+        // Shared Notes / Bulletin Board Functions
+        async function loadNotes() {
+            const list = document.getElementById('notes-list');
             try {
-                const res = await fetch('/api/notifications');
+                const res = await fetch('/api/notes');
                 const data = await res.json();
-                if (data.success) {
-                    const list = document.getElementById('notifications-list');
-                    if (data.notifications.length === 0) {
-                        list.innerHTML = '<div class="empty-state"><p>Henüz bildirim bulunmuyor.</p></div>';
-                        return;
-                    }
-
-                    list.innerHTML = data.notifications.map(n => {
-                        const time = new Date(n.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                if (data.success && data.notes.length > 0) {
+                    list.innerHTML = data.notes.map(n => {
+                        const time = new Date(n.created_at).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
                         return `
-                            <div class="notification-card ${n.is_read ? '' : 'unread'}">
+                            <div class="notification-card">
                                 <div>
-                                    <div class="notification-title">${escapeHtml(n.title)}</div>
-                                    <div class="notification-msg">${escapeHtml(n.message)}</div>
+                                    <div class="notification-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="color: var(--primary); font-weight: 700;">👤 ${escapeHtml(n.author)}</span>
+                                    </div>
+                                    <div class="notification-msg" style="margin-top: 0.4rem; color: var(--text-main); font-size: 0.92rem;">${escapeHtml(n.message)}</div>
                                 </div>
                                 <div class="notification-time">${time}</div>
                             </div>
                         `;
                     }).join('');
+                } else {
+                    list.innerHTML = `
+                        <div class="notification-card">
+                            <div>
+                                <div class="notification-title">👤 Kurucu Notu</div>
+                                <div class="notification-msg">👋 Hoş geldiniz! İlan tavsiyeleri veya staj tüyolarını buradan paylaşabilirsiniz.</div>
+                            </div>
+                            <div class="notification-time">Şimdi</div>
+                        </div>
+                    `;
                 }
             } catch (err) {
-                console.error("Bildirimler yüklenemedi:", err);
+                console.error("Notlar yüklenemedi:", err);
             }
         }
 
-        async function markNotificationsRead() {
-            await fetch('/api/notifications/read', { method: 'POST' });
+        async function submitNote() {
+            const author = document.getElementById('note-author').value.trim() || 'Anonim';
+            const message = document.getElementById('note-message').value.trim();
+
+            if (!message) {
+                alert("Lütfen bir not mesajı yazın.");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ author: author, message: message })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('note-message').value = '';
+                    loadNotes();
+                }
+            } catch (err) {
+                alert("Not gönderilemedi.");
+            }
+        }
+
+        function loadNotifications() {
+            const list = document.getElementById('notifications-list');
+            const notifs = getLocalNotifications();
+
+            if (notifs.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>Henüz kişisel bir bildiriminiz bulunmuyor.</p></div>';
+                return;
+            }
+
+            list.innerHTML = notifs.map(n => {
+                const time = new Date(n.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="notification-card ${n.is_read ? '' : 'unread'}">
+                        <div>
+                            <div class="notification-title">${escapeHtml(n.title)}</div>
+                            <div class="notification-msg">${escapeHtml(n.message)}</div>
+                        </div>
+                        <div class="notification-time">${time}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function markNotificationsRead() {
+            const notifs = getLocalNotifications();
+            notifs.forEach(n => n.is_read = true);
+            localStorage.setItem('local_notifications', JSON.stringify(notifs));
             loadNotifications();
             loadStats();
         }
@@ -357,19 +500,26 @@
                 const res = await fetch('/api/scan', { method: 'POST' });
                 const data = await res.json();
 
-                setTimeout(() => {
-                    btnText.innerText = "⚡ Şimdi Tara";
-                    spinner.style.display = "none";
-                    btn.disabled = false;
-                    loadStats();
-                    loadJobs();
-                    loadNotifications();
-                }, 3500);
+                btnText.innerText = "⚡ Şimdi Tara";
+                spinner.style.display = "none";
+                btn.disabled = false;
+
+                if (data.success) {
+                    if (data.new_jobs_added > 0) {
+                        addLocalNotification("🎯 Taramanız Tamamlandı!", `${data.new_jobs_added} adet yeni staj ilanı listenize eklendi.`);
+                    } else {
+                        addLocalNotification("🔍 Taramanız Tamamlandı", `Tüm platformlar tarandı (${data.total_found} ilan kontrol edildi). Yeni ilan eklenmedi.`);
+                    }
+                }
+
+                loadStats();
+                loadJobs();
+                loadNotifications();
             } catch (err) {
                 btnText.innerText = "⚡ Şimdi Tara";
                 spinner.style.display = "none";
                 btn.disabled = false;
-                alert("Tarama başlatılamadı.");
+                alert("Tarama gerçekleştirilirken bir sorun oluştu.");
             }
         }
 
