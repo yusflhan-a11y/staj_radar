@@ -31,6 +31,18 @@ def init_db():
         )
     """)
 
+    # User Job Statuses Table (Email-based separation & sync)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_job_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            job_id INTEGER NOT NULL,
+            status TEXT NOT NULL, -- 'saved', 'applied', 'ignored'
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(email, job_id)
+        )
+    """)
+
     # Shared Notes / Bulletin Board Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notes (
@@ -67,6 +79,35 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+def set_user_job_status(email, job_id, status):
+    conn = get_connection()
+    cursor = conn.cursor()
+    email_clean = email.strip().lower()
+    
+    if status == 'new' or not status:
+        cursor.execute("DELETE FROM user_job_status WHERE email = ? AND job_id = ?", (email_clean, job_id))
+    else:
+        cursor.execute("""
+            INSERT INTO user_job_status (email, job_id, status, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(email, job_id) DO UPDATE SET status = excluded.status, updated_at = CURRENT_TIMESTAMP
+        """, (email_clean, job_id, status))
+        
+    conn.commit()
+    conn.close()
+    return True
+
+def get_user_job_statuses(email):
+    if not email:
+        return {}
+    conn = get_connection()
+    cursor = conn.cursor()
+    email_clean = email.strip().lower()
+    cursor.execute("SELECT job_id, status FROM user_job_status WHERE email = ?", (email_clean,))
+    rows = cursor.fetchall()
+    conn.close()
+    return {row["job_id"]: row["status"] for row in rows}
 
 def generate_hash(title, company, url):
     raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
@@ -177,7 +218,6 @@ def update_job_status(job_id, status):
     conn.close()
     return True
 
-# Shared Notes / Bulletin Board Functions
 def add_note(author, message):
     conn = get_connection()
     cursor = conn.cursor()

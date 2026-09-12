@@ -15,6 +15,10 @@
                 <span>Staj Radar</span>
             </div>
             <div class="nav-right">
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.35rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">📧 E-Posta:</span>
+                    <input type="email" id="user-email" placeholder="ornek@mail.com" onchange="saveEmailAndReload()" style="background: transparent; border: none; color: white; font-size: 0.85rem; outline: none; width: 150px;">
+                </div>
                 <button id="btn-scan" class="btn btn-primary" onclick="triggerScan()">
                     <span id="scan-spinner" class="spinner" style="display: none;"></span>
                     <span id="scan-text">⚡ Şimdi Tara</span>
@@ -58,7 +62,7 @@
             <div class="stat-card">
                 <div class="stat-icon saved">⭐</div>
                 <div class="stat-info">
-                    <h4>Benim Başvuru / Takibim</h4>
+                    <h4>Başvuru / Takibim</h4>
                     <div class="stat-value" id="stat-saved-applied">0</div>
                 </div>
             </div>
@@ -76,7 +80,7 @@
                     <span class="badge-counter" id="badge-mis">0</span>
                 </button>
                 <button class="tab-btn" data-tab="saved_applied" onclick="switchTab('saved_applied')">
-                    <span>⭐ Benim Kaydettiklerim & Başvurularım</span>
+                    <span>⭐ Kaydettiklerim & Başvurularım</span>
                 </button>
                 <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')">
                     <span>📌 Ortak Pano & Notlar</span>
@@ -140,7 +144,7 @@
         <!-- Notifications View -->
         <div id="notifications-container" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="font-size: 1.1rem; font-weight: 700;">Cihazınıza Özel Tarama Bildirimleri</h3>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">Özel Tarama Bildirimleri</h3>
                 <button class="btn btn-secondary" onclick="markNotificationsRead()">Tümünü Okundu İşaretle</button>
             </div>
             <div id="notifications-list">
@@ -153,17 +157,82 @@
     <script>
         let currentTab = 'computer_engineering';
         let searchTimeout = null;
+        let userEmailStatuses = {};
 
-        function getLocalStatus(jobId) {
+        function getUserEmail() {
+            return (document.getElementById('user-email').value || localStorage.getItem('user_email') || '').trim().lowerCase();
+        }
+
+        function saveEmailAndReload() {
+            const emailInput = document.getElementById('user-email').value.trim();
+            if (emailInput) {
+                localStorage.setItem('user_email', emailInput);
+            }
+            loadUserStatuses();
+        }
+
+        async function loadUserStatuses() {
+            const email = getUserEmail();
+            if (!email) {
+                userEmailStatuses = {};
+                loadJobs();
+                loadStats();
+                return;
+            }
+            try {
+                const res = await fetch(`/api/user/status?email=${encodeURIComponent(email)}`);
+                const data = await res.json();
+                if (data.success) {
+                    userEmailStatuses = data.statuses || {};
+                }
+            } catch (e) {
+                console.error("Kullanıcı durumları yüklenemedi:", e);
+            }
+            loadJobs();
+            loadStats();
+        }
+
+        function getUserStatus(jobId) {
+            const email = getUserEmail();
+            if (email) {
+                return userEmailStatuses[jobId] || 'new';
+            }
             return localStorage.getItem(`job_status_${jobId}`) || 'new';
         }
 
-        function setLocalStatus(jobId, status) {
-            if (status === 'new') {
-                localStorage.removeItem(`job_status_${jobId}`);
-            } else {
-                localStorage.setItem(`job_status_${jobId}`, status);
+        async function setUserStatus(jobId, status) {
+            const email = getUserEmail();
+            if (!email) {
+                const promptEmail = prompt("Kişisel takibinizin tüm cihazlarınızda eşsenkronize saklanması için lütfen E-posta adresinizi giriniz:");
+                if (promptEmail && promptEmail.includes('@')) {
+                    document.getElementById('user-email').value = promptEmail;
+                    localStorage.setItem('user_email', promptEmail);
+                    return setUserStatus(jobId, status);
+                } else {
+                    // Fallback to local storage if no email provided
+                    if (status === 'new') localStorage.removeItem(`job_status_${jobId}`);
+                    else localStorage.setItem(`job_status_${jobId}`, status);
+                    loadJobs();
+                    loadStats();
+                    return;
+                }
             }
+
+            try {
+                const res = await fetch('/api/user/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, job_id: jobId, status: status })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    userEmailStatuses = data.statuses || {};
+                }
+            } catch (e) {
+                console.error("Durum kaydedilemedi:", e);
+            }
+            loadJobs();
+            loadStats();
         }
 
         function getLocalNotifications() {
@@ -187,8 +256,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadStats();
-            loadJobs();
+            const savedEmail = localStorage.getItem('user_email');
+            if (savedEmail) {
+                document.getElementById('user-email').value = savedEmail;
+            }
+
+            loadUserStatuses();
             loadNotifications();
 
             if (getLocalNotifications().length === 0) {
@@ -253,12 +326,20 @@
                     document.getElementById('stat-mis').innerText = s.mis_jobs;
                     document.getElementById('stat-today').innerText = s.today_jobs;
 
+                    // Personal count for current user
                     let personalCount = 0;
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key.startsWith('job_status_')) {
-                            const val = localStorage.getItem(key);
-                            if (val === 'saved' || val === 'applied') personalCount++;
+                    const email = getUserEmail();
+                    if (email) {
+                        for (const [jid, st] of Object.entries(userEmailStatuses)) {
+                            if (st === 'saved' || st === 'applied') personalCount++;
+                        }
+                    } else {
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key.startsWith('job_status_')) {
+                                const val = localStorage.getItem(key);
+                                if (val === 'saved' || val === 'applied') personalCount++;
+                            }
                         }
                     }
                     document.getElementById('stat-saved-applied').innerText = personalCount;
@@ -307,11 +388,11 @@
 
                     if (currentTab === 'saved_applied') {
                         filteredJobs = filteredJobs.filter(job => {
-                            const st = getLocalStatus(job.id);
+                            const st = getUserStatus(job.id);
                             return st === 'saved' || st === 'applied';
                         });
                     } else {
-                        filteredJobs = filteredJobs.filter(job => getLocalStatus(job.id) !== 'ignored');
+                        filteredJobs = filteredJobs.filter(job => getUserStatus(job.id) !== 'ignored');
                     }
 
                     if (filteredJobs.length > 0) {
@@ -340,7 +421,7 @@
         }
 
         function renderJobCard(job) {
-            const userStatus = getLocalStatus(job.id);
+            const userStatus = getUserStatus(job.id);
             const isSaved = userStatus === 'saved';
             const isApplied = userStatus === 'applied';
             
@@ -389,12 +470,9 @@
         }
 
         function updateStatus(jobId, newStatus) {
-            setLocalStatus(jobId, newStatus);
-            loadJobs();
-            loadStats();
+            setUserStatus(jobId, newStatus);
         }
 
-        // Shared Notes / Bulletin Board Functions
         async function loadNotes() {
             const list = document.getElementById('notes-list');
             try {
@@ -432,7 +510,7 @@
         }
 
         async function submitNote() {
-            const author = document.getElementById('note-author').value.trim() || 'Anonim';
+            const author = document.getElementById('note-author').value.trim() || getUserEmail() || 'Anonim';
             const message = document.getElementById('note-message').value.trim();
 
             if (!message) {

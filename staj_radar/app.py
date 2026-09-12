@@ -53,6 +53,26 @@ def api_get_jobs():
     )
     return jsonify({"success": True, "count": len(jobs), "jobs": jobs})
 
+# Email-based User Status APIs
+@app.route("/api/user/status", methods=["GET", "POST"])
+def api_user_status():
+    if request.method == "POST":
+        data = request.json or {}
+        email = data.get("email", "").strip().lower()
+        job_id = data.get("job_id")
+        status = data.get("status")
+        
+        if not email or not job_id:
+            return jsonify({"success": False, "error": "E-posta ve ilan ID gereklidir."}), 400
+            
+        database.set_user_job_status(email, job_id, status)
+        statuses = database.get_user_job_statuses(email)
+        return jsonify({"success": True, "statuses": statuses})
+    else:
+        email = request.args.get("email", "").strip().lower()
+        statuses = database.get_user_job_statuses(email)
+        return jsonify({"success": True, "statuses": statuses})
+
 @app.route("/api/notes", methods=["GET", "POST"])
 def api_notes():
     if request.method == "POST":
@@ -106,16 +126,6 @@ def api_export_jobs():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=staj_ilanlari.csv"}
     )
-
-@app.route("/api/jobs/<int:job_id>/status", methods=["POST"])
-def api_update_job_status(job_id):
-    data = request.json or {}
-    new_status = data.get("status")
-    if not new_status or new_status not in ["new", "saved", "applied", "ignored"]:
-        return jsonify({"success": False, "error": "Geçersiz durum."}), 400
-    
-    database.update_job_status(job_id, new_status)
-    return jsonify({"success": True, "job_id": job_id, "new_status": new_status})
 
 @app.route("/api/stats", methods=["GET"])
 def api_get_stats():
