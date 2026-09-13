@@ -88,6 +88,16 @@
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
         }
 
+        .logo-img {
+            height: 46px;
+            max-width: 180px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fdfbf7;
+            padding: 3px 8px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+        }
+
         .logo-text h1 {
             font-size: 22px;
             font-weight: 700;
@@ -599,7 +609,8 @@
     <header>
         <div class="container header-content">
             <a href="#" class="logo" onclick="switchCategory('computer_engineering')">
-                <div class="logo-icon">📡</div>
+                <img src="/static/logo.png" alt="Staj Radar Logo" class="logo-img" id="custom-logo-img" onerror="this.style.display='none'; document.getElementById('default-logo-icon').style.display='flex';" onload="document.getElementById('default-logo-icon').style.display='none';">
+                <div class="logo-icon" id="default-logo-icon" style="display:none;">📡</div>
                 <div class="logo-text">
                     <h1>Staj Radar</h1>
                     <p>Günlük Doğrudan Başvurulabilir Staj İlanları</p>
@@ -755,8 +766,9 @@
         }
 
         function loadJobs() {
-            const grid = document.getElementById('jobsGrid');
-            grid.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
+            const container = document.getElementById('content-area');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
 
             let url = `/api/jobs?category=${currentCategory}&limit=100`;
             if (currentWorkType) url += `&work_type=${currentWorkType}`;
@@ -768,6 +780,10 @@
                     if (data.status === 'success') {
                         renderJobs(data.jobs);
                     }
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<div class="empty-state"><p>İlanlar yüklenirken bir hata oluştu.</p></div>';
                 });
         }
 
