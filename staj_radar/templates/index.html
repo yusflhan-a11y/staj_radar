@@ -203,12 +203,37 @@
         }
 
         .badge-count {
-            background: var(--accent-danger);
-            color: white;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
             font-size: 11px;
             padding: 2px 7px;
             border-radius: 10px;
             font-weight: 700;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-num {
+            font-weight: 700;
+            color: var(--accent-ce);
+            font-size: 14px;
         }
 
         /* Controls Section */
@@ -629,10 +654,10 @@
         <!-- Tabs -->
         <div class="nav-tabs">
             <button class="tab-btn active-ce" id="tab-ce" onclick="switchCategory('computer_engineering')">
-                💻 Bilgisayar Mühendisliği
+                💻 Bilgisayar Mühendisliği <span class="badge-count" id="ce-count">0</span>
             </button>
             <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
-                📊 Yönetim Bilişim Sistemleri (YBS)
+                📊 Yönetim Bilişim Sistemleri (YBS) <span class="badge-count" id="mis-count">0</span>
             </button>
             <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
                 📌 Ortak Pano & Notlar
@@ -640,6 +665,14 @@
             <button class="tab-btn" id="tab-notifications" onclick="switchTab('notifications')">
                 🔔 Bildirimler <span class="badge-count" id="notif-badge" style="display:none;">0</span>
             </button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-pill"><span class="stat-num" id="stat-total">0</span> Toplam Aktif İlan</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-ce">0</span> Bilgisayar Mühendisliği</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-mis">0</span> YBS</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-today">0</span> Bugün Eklenen</div>
         </div>
 
         <!-- Controls -->
@@ -679,8 +712,26 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadSavedEmail();
             loadJobs();
+            loadStats();
             checkNotifications();
         });
+
+        function loadStats() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.stats) {
+                        const s = data.stats;
+                        if (document.getElementById('ce-count')) document.getElementById('ce-count').innerText = s.ce_jobs;
+                        if (document.getElementById('mis-count')) document.getElementById('mis-count').innerText = s.mis_jobs;
+                        if (document.getElementById('stat-total')) document.getElementById('stat-total').innerText = s.total_jobs;
+                        if (document.getElementById('stat-ce')) document.getElementById('stat-ce').innerText = s.ce_jobs;
+                        if (document.getElementById('stat-mis')) document.getElementById('stat-mis').innerText = s.mis_jobs;
+                        if (document.getElementById('stat-today')) document.getElementById('stat-today').innerText = s.today_jobs;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
 
         function getUserEmail() {
             return localStorage.getItem('staj_radar_user_email') || '';
@@ -730,6 +781,7 @@
             }
 
             document.getElementById('controls-section').style.display = 'flex';
+            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'flex';
             document.getElementById('exportBtn').href = `/api/jobs/export?category=${cat}`;
             loadJobs();
         }
@@ -738,6 +790,7 @@
             currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn');
             document.getElementById('controls-section').style.display = 'none';
+            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'none';
 
             if (tab === 'notes') {
                 document.getElementById('tab-notes').className = 'tab-btn active-notes';
