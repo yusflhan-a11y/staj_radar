@@ -1,49 +1,71 @@
 import requests
 from bs4 import BeautifulSoup
 from scrapers.base_scraper import BaseScraper
+import re
 
 class YouthallScraper(BaseScraper):
     def __init__(self):
         super().__init__("Youthall")
-        self.url = "https://www.youthall.com/tr/jobs/"
+        self.urls = [
+            "https://www.youthall.com/tr/jobs/",
+            "https://www.youthall.com/tr/is-ilanlari/stajyer/"
+        ]
 
     def fetch_jobs(self):
         jobs = []
-        try:
-            response = requests.get(self.url, headers=self.headers, timeout=10)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # Parse every job posting card on Youthall
-                for card in soup.select("article, .job-card, .event-card, .company-job-item"):
-                    title_elem = card.select_one(".job-title, h3, h2, .title, a[title]")
-                    company_elem = card.select_one(".company-name, .company, .name, span.company, strong")
-                    location_elem = card.select_one(".location, .city, span.location")
-                    link_elem = card.select_one("a[href*='/tr/'], a[href*='/en/'], a[href]")
+        seen_urls = set()
 
-                    if title_elem and link_elem:
-                        title = title_elem.get_text(strip=True)
-                        company = company_elem.get_text(strip=True) if company_elem else "Youthall İş Vereni"
-                        location = location_elem.get_text(strip=True) if location_elem else "İstanbul"
-                        
-                        href = link_elem.get('href', '')
-                        if href and not href.startswith('http'):
-                            href = f"https://www.youthall.com{href}"
+        for target_url in self.urls:
+            try:
+                response = requests.get(target_url, headers=self.headers, timeout=10)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
+                    # Parse all job links on Youthall
+                    for a in soup.find_all("a", href=True):
+                        href = a['href']
+                        if ("_" in href or "/yetenek-programlari/" in href) and ("/tr/" in href or "/en/" in href):
+                            if not href.startswith("http"):
+                                href = f"https://www.youthall.com{href}"
 
-                        # Ensure link points directly to individual job posting (_id)
-                        if ("_" in href or "/yetenek-programlari/" in href) and ("staj" in title.lower() or "intern" in title.lower() or "it" in title.lower() or "veri" in title.lower() or "yazılım" in title.lower() or "analist" in title.lower()):
-                            jobs.append({
-                                "title": title,
-                                "company": company,
-                                "location": location,
-                                "platform": "Youthall",
-                                "url": href,
-                                "description": f"{company} tarafından yayınlanan {title} başvuru ilanı."
-                            })
-        except Exception as e:
-            print(f"[YouthallScraper] Hata: {e}")
+                            if href in seen_urls:
+                                continue
 
-        # Real direct active Youthall job detail URLs
+                            seen_urls.add(href)
+                            text = a.get_text(separator=" ", strip=True)
+
+                            # Clean up title and company
+                            lines = [line.strip() for line in text.split("\n") if line.strip()]
+                            full_text = " ".join(lines)
+                            
+                            # Filter for relevant keywords
+                            lower_text = full_text.lower()
+                            if any(kw in lower_text for kw in ["staj", "intern", "trainee", "yazılım", "ybs", "it ", "veri", "analist", "programı"]):
+                                # Extract company name from URL if possible (e.g. /tr/Shell/title_123/)
+                                company = "Youthall İş Vereni"
+                                match = re.search(r'/tr/([^/]+)/|/en/([^/]+)/', href)
+                                if match:
+                                    raw_comp = match.group(1) or match.group(2)
+                                    if raw_comp and raw_comp.lower() not in ["jobs", "is-ilanlari", "yetenek-programlari"]:
+                                        company = raw_comp.replace("-", " ").title()
+
+                                # Title cleanup
+                                title = lines[0] if lines else "Staj Pozisyonu"
+                                if len(title) > 80:
+                                    title = title[:77] + "..."
+
+                                jobs.append({
+                                    "title": title,
+                                    "company": company,
+                                    "location": "İstanbul / Türkiye",
+                                    "platform": "Youthall",
+                                    "url": href,
+                                    "description": f"{company} tarafından açılan {title} ilanı. Doğrudan Youthall başvuru sayfası."
+                                })
+            except Exception as e:
+                print(f"[YouthallScraper] Hata ({target_url}): {e}")
+
+        # Fallback if network blocked
         if not jobs:
             jobs.extend([
                 {
@@ -68,7 +90,7 @@ class YouthallScraper(BaseScraper):
                     "location": "İstanbul (Uzaktan)",
                     "platform": "Youthall",
                     "url": "https://www.youthall.com/en/abbvie/abbvie-xperience-long-term-internship-program-bi-omnichannel-consumer-marketing_117/",
-                    "description": "İş zekası (BI), veri analitiği ve dijital pazarlama süreçlerinde YBS ve Mühendislik stajyeri."
+                    "description": "İş zekası (BI), veri analitiği ve dijital pazarlama süreçlerinde YBS stajyeri."
                 },
                 {
                     "title": "Proje Bazlı Stajyer - Gebze Satış & Sistem",
@@ -79,5 +101,5 @@ class YouthallScraper(BaseScraper):
                     "description": "Doğuş Otomotiv bünyesinde iş süreçleri ve sistem takibi stajı."
                 }
             ])
-            
+
         return jobs

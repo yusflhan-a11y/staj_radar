@@ -173,13 +173,10 @@ REAL_LIVE_JOBS = [
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
-    
-    # DROP old jobs table to completely wipe out any fake testcorp or broken search query URLs
-    cursor.execute("DROP TABLE IF EXISTS jobs")
 
-    # Recreate Jobs Table
+    # Recreate Jobs Table if not exists
     cursor.execute("""
-        CREATE TABLE jobs (
+        CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             hash_key TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
@@ -195,6 +192,16 @@ def init_db():
             scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Lightweight migration for databases created before expiry tracking existed.
+    existing_columns = {row["name"] for row in cursor.execute("PRAGMA table_info(jobs)")}
+    if "is_active" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+    if "last_seen_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN last_seen_at TIMESTAMP")
+        cursor.execute("UPDATE jobs SET last_seen_at = scanned_at WHERE last_seen_at IS NULL")
+    if "expired_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN expired_at TIMESTAMP")
 
     # User Job Statuses Table
     cursor.execute("""
@@ -249,13 +256,12 @@ def init_db():
         )
     """)
 
-    # Insert verified live direct internship postings
+    # Insert verified live direct internship postings (if not already present)
     for job in REAL_LIVE_JOBS:
-        raw_hash = f"{job['title'].strip().lower()}|{job['company'].strip().lower()}"
-        hash_key = hashlib.md5(raw_hash.encode('utf-8')).hexdigest()
+        hash_key = generate_hash(job['title'], job['company'], job['url'])
         cursor.execute("""
-            INSERT INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type, last_seen_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """, (hash_key, job['title'], job['company'], job['location'], job['platform'], job['url'], job['description'], job['category'], job['work_type']))
 
     conn.commit()
@@ -291,7 +297,7 @@ def get_user_job_statuses(email):
     return {row["job_id"]: row["status"] for row in rows}
 
 def generate_hash(title, company, url=""):
-    raw = f"{title.strip().lower()}|{company.strip().lower()}"
+    raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
 def categorize_job(title, description=""):
@@ -331,7 +337,7 @@ def save_job(job_data):
         conn.close()
         return None, False
 
-    hash_key = generate_hash(title, company)
+    hash_key = generate_hash(title, company, raw_url)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
     
@@ -347,7 +353,9 @@ def save_job(job_data):
     except sqlite3.IntegrityError:
         cursor.execute("""
             UPDATE jobs 
-            SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
+            SET url = ?, description = ?, location = ?, work_type = ?, category = ?,
+                scanned_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP,
+                is_active = 1, expired_at = NULL
             WHERE hash_key = ?
         """, (raw_url, description, location, work_type, category, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
@@ -356,12 +364,43 @@ def save_job(job_data):
         conn.close()
         return (row["id"] if row else None), False
 
+def expire_unseen_jobs(platforms, scan_started_at):
+    """Archive active listings absent from a successful source scan.
+
+    A failed/blocked scraper must never expire listings, hence callers pass only
+    platforms whose request returned successfully.
+    """
+    if not platforms:
+        return 0
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    placeholders = ", ".join("?" for _ in platforms)
+    cursor.execute(
+        f"""UPDATE jobs
+            SET is_active = 0, expired_at = CURRENT_TIMESTAMP
+            WHERE is_active = 1
+              AND platform IN ({placeholders})
+              AND (last_seen_at IS NULL OR last_seen_at < ?)
+        """,
+        [*platforms, scan_started_at],
+    )
+    expired_count = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return expired_count
+
 def get_jobs(category=None, search=None, work_type=None, status=None, platform=None, limit=100, offset=0):
     conn = get_connection()
     cursor = conn.cursor()
     
     query = "SELECT * FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'"
     params = []
+
+    if status == "expired":
+        query += " AND is_active = 0"
+    else:
+        query += " AND is_active = 1"
     
     if category:
         if category == "computer_engineering":
@@ -381,7 +420,7 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
         query += " AND work_type = ?"
         params.append(work_type)
 
-    if status and status != 'all':
+    if status and status not in ('all', 'expired'):
         query += " AND status = ?"
         params.append(status)
         
@@ -462,16 +501,16 @@ def get_stats():
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
+    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
     total_jobs = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
     ce_jobs = cursor.fetchone()["ce"]
 
-    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
     mis_jobs = cursor.fetchone()["mis"]
 
-    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
+    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
     today_jobs = cursor.fetchone()["today"]
 
     cursor.execute("SELECT COUNT(*) as applied FROM jobs WHERE status = 'applied'")
@@ -479,6 +518,9 @@ def get_stats():
 
     cursor.execute("SELECT COUNT(*) as saved FROM jobs WHERE status = 'saved'")
     saved_jobs = cursor.fetchone()["saved"]
+
+    cursor.execute("SELECT COUNT(*) as expired FROM jobs WHERE is_active = 0 AND status != 'ignored'")
+    expired_jobs = cursor.fetchone()["expired"]
 
     unread_notifications = get_unread_notification_count()
 
@@ -490,6 +532,7 @@ def get_stats():
         "today_jobs": today_jobs,
         "applied_jobs": applied_jobs,
         "saved_jobs": saved_jobs,
+        "expired_jobs": expired_jobs,
         "unread_notifications": unread_notifications
     }
 

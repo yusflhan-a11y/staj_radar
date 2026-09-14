@@ -15,16 +15,25 @@ from scrapers.runner import run_all_scrapers
 
 app = Flask(__name__)
 
-# Automated Background Scheduler (Runs scan every 12 hours)
+# Automated Background Scheduler (Runs scan every 6 hours and on startup)
 def start_scheduler():
     def loop():
+        # Startup scan after 5 seconds
+        time.sleep(5)
+        try:
+            print("[Scheduler] Sunucu başlangıç staj taraması çalıştırılıyor...")
+            run_all_scrapers()
+        except Exception as e:
+            print(f"[Scheduler Startup] Hata: {e}")
+
+        # Recurring 6-hour loop
         while True:
-            time.sleep(43200) # 12 hours
+            time.sleep(21600) # 6 hours
             try:
-                print("[Scheduler] Otomatik 12 saatlik staj taraması başlatılıyor...")
+                print("[Scheduler] Otomatik 6 saatlik staj taraması başlatılıyor...")
                 run_all_scrapers()
             except Exception as e:
-                print(f"[Scheduler] Hata: {e}")
+                print(f"[Scheduler Loop] Hata: {e}")
 
     thread = threading.Thread(target=loop, daemon=True)
     thread.start()

@@ -25,3 +25,7 @@ WORK_TYPE_KEYWORDS = {
 }
 
 INTERNSHIP_KEYWORDS = ["staj", "intern", "trainee", "genç yetenek", "talent"]
+
+# A scan only marks listings as expired when their source was successfully read.
+# Keeping this value in one place also makes the six-hour interval testable.
+SCAN_INTERVAL_SECONDS = 6 * 60 * 60

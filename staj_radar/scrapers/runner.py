@@ -6,6 +6,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from scrapers.youthall_scraper import YouthallScraper
+from scrapers.coderspace_scraper import CoderspaceScraper
 from scrapers.kariyer_scraper import KariyerScraper
 import database
 
@@ -15,6 +16,7 @@ def run_all_scrapers():
     
     scrapers = [
         YouthallScraper(),
+        CoderspaceScraper(),
         KariyerScraper()
     ]
     
@@ -41,7 +43,7 @@ def run_all_scrapers():
     if total_added > 0:
         database.add_notification(
             title=f"🔔 {total_added} Yeni Staj İlanı Eklendi!",
-            message=f"Bugünkü taramada {total_added} yeni doğrudan başvurulabilir staj ilanı bulundu.",
+            message=f"Taramada {total_added} yeni doğrudan başvurulabilir staj ilanı bulundu.",
             n_type="info"
         )
         
