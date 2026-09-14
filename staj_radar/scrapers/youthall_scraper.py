@@ -19,6 +19,7 @@ class YouthallScraper(BaseScraper):
             try:
                 response = requests.get(target_url, headers=self.headers, timeout=10)
                 if response.status_code == 200:
+                    self.last_fetch_succeeded = True
                     soup = BeautifulSoup(response.text, 'html.parser')
                     
                     # Parse all job links on Youthall
@@ -64,42 +65,5 @@ class YouthallScraper(BaseScraper):
                                 })
             except Exception as e:
                 print(f"[YouthallScraper] Hata ({target_url}): {e}")
-
-        # Fallback if network blocked
-        if not jobs:
-            jobs.extend([
-                {
-                    "title": "IT Infrastructure Long-Term Internship",
-                    "company": "Shell Turkey",
-                    "location": "İstanbul (Hibrit)",
-                    "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/Shell/it-infrastructure-internship_1302/",
-                    "description": "IT altyapı mimarileri, Linux ve ağ yönetimi alanında üniversite stajyeri."
-                },
-                {
-                    "title": "Gelecek Toyota'da Uzun Dönem Staj Programı",
-                    "company": "Toyota Türkiye",
-                    "location": "İstanbul / Kocaeli",
-                    "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/toyotaturkiye/gelecek-toyotada-uzun-donem-staj-programi_4/",
-                    "description": "Otomotiv teknolojileri, sistem analizi ve mühendislik departmanında staj fırsatı."
-                },
-                {
-                    "title": "BI & Omnichannel Digital Marketing Intern",
-                    "company": "AbbVie Turkey",
-                    "location": "İstanbul (Uzaktan)",
-                    "platform": "Youthall",
-                    "url": "https://www.youthall.com/en/abbvie/abbvie-xperience-long-term-internship-program-bi-omnichannel-consumer-marketing_117/",
-                    "description": "İş zekası (BI), veri analitiği ve dijital pazarlama süreçlerinde YBS stajyeri."
-                },
-                {
-                    "title": "Proje Bazlı Stajyer - Gebze Satış & Sistem",
-                    "company": "Doğuş Otomotiv",
-                    "location": "Kocaeli / Gebze",
-                    "platform": "Youthall",
-                    "url": "https://www.youthall.com/tr/dogusotomotiv/proje-bazli-stajyer-scania-gebze-satis-ve-servis_117/",
-                    "description": "Doğuş Otomotiv bünyesinde iş süreçleri ve sistem takibi stajı."
-                }
-            ])
 
         return jobs

@@ -11,6 +11,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 import database
+from config import SCAN_INTERVAL_SECONDS
 from scrapers.runner import run_all_scrapers
 
 app = Flask(__name__)
@@ -28,7 +29,7 @@ def start_scheduler():
 
         # Recurring 6-hour loop
         while True:
-            time.sleep(21600) # 6 hours
+            time.sleep(SCAN_INTERVAL_SECONDS)
             try:
                 print("[Scheduler] Otomatik 6 saatlik staj taraması başlatılıyor...")
                 run_all_scrapers()
@@ -38,7 +39,11 @@ def start_scheduler():
     thread = threading.Thread(target=loop, daemon=True)
     thread.start()
 
-start_scheduler()
+# Local use keeps the convenient in-process scheduler. In production an
+# external scheduler calls /api/scan, so a sleeping/restarted web process does
+# not silently stop the six-hour refresh cycle.
+if os.environ.get("ENABLE_IN_PROCESS_SCHEDULER", "").lower() in {"1", "true", "yes"} or os.environ.get("RENDER_SERVICE_TYPE") != "web":
+    start_scheduler()
 
 @app.route("/")
 def index():

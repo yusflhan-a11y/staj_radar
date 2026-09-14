@@ -659,6 +659,9 @@
             <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
                 📊 Yönetim Bilişim Sistemleri (YBS) <span class="badge-count" id="mis-count">0</span>
             </button>
+            <button class="tab-btn" id="tab-expired" onclick="switchTab('expired')">
+                📦 Süresi Bitmiş <span class="badge-count" id="expired-count">0</span>
+            </button>
             <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
                 📌 Ortak Pano & Notlar
             </button>
@@ -724,6 +727,7 @@
                         const s = data.stats;
                         if (document.getElementById('ce-count')) document.getElementById('ce-count').innerText = s.ce_jobs;
                         if (document.getElementById('mis-count')) document.getElementById('mis-count').innerText = s.mis_jobs;
+                        if (document.getElementById('expired-count')) document.getElementById('expired-count').innerText = s.expired_jobs;
                         if (document.getElementById('stat-total')) document.getElementById('stat-total').innerText = s.total_jobs;
                         if (document.getElementById('stat-ce')) document.getElementById('stat-ce').innerText = s.ce_jobs;
                         if (document.getElementById('stat-mis')) document.getElementById('stat-mis').innerText = s.mis_jobs;
@@ -799,6 +803,10 @@
                 document.getElementById('tab-notifications').className = 'tab-btn active-notifications';
                 loadNotifications();
                 markNotificationsRead();
+            } else if (tab === 'expired') {
+                document.getElementById('tab-expired').className = 'tab-btn active-notes';
+                document.getElementById('controls-section').style.display = 'flex';
+                loadJobs();
             }
         }
 
@@ -823,7 +831,9 @@
             if (!container) return;
             container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
 
-            let url = `/api/jobs?category=${currentCategory}&limit=100`;
+            let url = currentTab === 'expired'
+                ? '/api/jobs?status=expired&limit=100'
+                : `/api/jobs?category=${currentCategory}&limit=100`;
             if (currentWorkType) url += `&work_type=${currentWorkType}`;
             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
@@ -879,7 +889,7 @@
                         </div>
                         <div class="job-actions">
                             <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener noreferrer" class="btn-apply">
-                                Doğrudan Başvur ↗
+                                ${currentTab === 'expired' ? 'İlan Sayfasını Gör ↗' : 'Doğrudan Başvur ↗'}
                             </a>
                             <div class="user-actions">
                                 <button class="btn-user-act ${status === 'saved' ? 'saved' : ''}" title="Kaydet" onclick="toggleUserStatus(${job.id}, 'saved')">

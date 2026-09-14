@@ -15,6 +15,7 @@ class CoderspaceScraper(BaseScraper):
         try:
             response = requests.get(self.url, headers=self.headers, timeout=10)
             if response.status_code == 200:
+                self.last_fetch_succeeded = True
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
                 for a in soup.find_all("a", href=True):
@@ -47,33 +48,5 @@ class CoderspaceScraper(BaseScraper):
                             })
         except Exception as e:
             print(f"[CoderspaceScraper] Hata: {e}")
-
-        if not jobs:
-            jobs.extend([
-                {
-                    "title": "Softtech Road to Tech Staj Programı",
-                    "company": "Softtech",
-                    "location": "İstanbul (Ofis)",
-                    "platform": "Coderspace",
-                    "url": "https://coderspace.io/etkinlikler/softtech-road-to-tech-staj-programi/",
-                    "description": "Yazılım ve teknoloji alanında staj ve gelişim programı."
-                },
-                {
-                    "title": "Trendyol Talent Program 2026 (Yazılım Stajı)",
-                    "company": "Trendyol",
-                    "location": "İstanbul (Hibrit)",
-                    "platform": "Coderspace",
-                    "url": "https://coderspace.io/etkinlikler/trendyol-talent-program-2026/",
-                    "description": "Trendyol teknoloji ve mühendislik ekiplerinde genç yetenek stajı."
-                },
-                {
-                    "title": "Mercedes-Benz DRIVE-UP Uzun Dönem Staj Programı",
-                    "company": "Mercedes-Benz",
-                    "location": "İstanbul / Aksaray",
-                    "platform": "Coderspace",
-                    "url": "https://coderspace.io/etkinlikler/mercedes-benz-drive-up-uzun-donem-staj-program/",
-                    "description": "Mercedes-Benz bünyesinde teknoloji ve mühendislik stajı."
-                }
-            ])
 
         return jobs
