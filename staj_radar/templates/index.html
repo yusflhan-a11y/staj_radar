@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staj Radar | Canlı Yazılım & YBS Staj İlanları</title>
-    <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS / İşletme) öğrencileri için 6 saatte bir güncellenen doğrudan başvurulabilir staj ilanları.">
+    <title>Staj Radar | Canlı Yazılım, Bilgisayar Mühendisliği & YBS Staj İlanları</title>
+    <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS / İşletme) öğrencileri için 6 saatte bir güncellenen doğrudan başvurulabilir yazılım ve IT staj ilanları platformu.">
+    <meta name="keywords" content="staj ilanları, bilgisayar mühendisliği stajı, ybs staj ilanları, yazılım stajı, backend staj, frontend staj, veri analitiği stajı, staj radar">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+
+    <!-- Open Graph / Social Media Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Staj Radar | Güncel Yazılım & YBS Staj İlanları">
+    <meta property="og:description" content="6 saatte bir otomatik güncellenen doğrudan başvurulabilir Bilgisayar Mühendisliği ve YBS staj fırsatları.">
+    <meta property="og:image" content="/static/logo.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Staj Radar | Güncel Yazılım & YBS Staj İlanları">
+    <meta name="twitter:description" content="Bilgisayar Mühendisliği ve YBS öğrencileri için güncel ve doğrulanmış staj fırsatları.">
+    <meta name="twitter:image" content="/static/logo.png">
     
     <!-- Typography & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -548,6 +564,28 @@
             border: 1px solid var(--border-subtle);
             color: var(--text-muted);
             white-space: nowrap;
+        }
+
+        .badge-new-scan {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.02em;
+            animation: pulse-badge 2s infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes pulse-badge {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
         .job-title {
@@ -1267,7 +1305,10 @@
                         <div>
                             <div class="card-top">
                                 <span class="company-name">${escapeHtml(job.company)}</span>
-                                <span class="platform-badge">${escapeHtml(job.platform)} ${isExpired ? '(Kapanmış)' : ''}</span>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    ${job.is_new_scan ? '<span class="badge-new-scan" title="Son taramada yeni eklendi">✨ YENİ</span>' : ''}
+                                    <span class="platform-badge">${escapeHtml(job.platform)} ${isExpired ? '(Kapanmış)' : ''}</span>
+                                </div>
                             </div>
                             <h2 class="job-title">${escapeHtml(job.title)}</h2>
                             

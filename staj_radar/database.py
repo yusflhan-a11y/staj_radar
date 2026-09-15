@@ -509,10 +509,24 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
     query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
     
+    # Fetch latest scan start timestamp to flag jobs added in the latest scan
+    cursor.execute("SELECT started_at FROM scans ORDER BY id DESC LIMIT 1")
+    latest_scan_row = cursor.fetchone()
+    latest_scan_start = latest_scan_row["started_at"] if latest_scan_row else None
+
     cursor.execute(query, params)
     rows = cursor.fetchall()
-    jobs = [dict(row) for row in rows]
-    
+    jobs = []
+    for row in rows:
+        job_dict = dict(row)
+        created_at = job_dict.get("created_at") or ""
+        # Mark as new if created during or after the latest scan start
+        if latest_scan_start and created_at and created_at >= latest_scan_start:
+            job_dict["is_new_scan"] = 1
+        else:
+            job_dict["is_new_scan"] = 0
+        jobs.append(job_dict)
+
     conn.close()
     return jobs
 

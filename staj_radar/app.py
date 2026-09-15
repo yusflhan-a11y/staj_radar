@@ -46,6 +46,23 @@ start_scheduler()
 def index():
     return render_template("index.html")
 
+@app.route("/robots.txt")
+def robots_txt():
+    content = "User-agent: *\nAllow: /\nSitemap: https://stajradar.com/sitemap.xml\n"
+    return Response(content, mimetype="text/plain")
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://stajradar.com/</loc>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    return Response(xml, mimetype="application/xml")
+
 @app.route("/api/jobs", methods=["GET"])
 def api_get_jobs():
     category = request.args.get("category")
