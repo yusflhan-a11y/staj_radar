@@ -11,7 +11,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 import database
-from config import SCAN_INTERVAL_SECONDS
+from config import SCAN_INTERVAL_SECONDS, CRON_SECRET
 from scrapers.runner import run_all_scrapers
 
 app = Flask(__name__)
@@ -39,11 +39,8 @@ def start_scheduler():
     thread = threading.Thread(target=loop, daemon=True)
     thread.start()
 
-# Local use keeps the convenient in-process scheduler. In production an
-# external scheduler calls /api/scan, so a sleeping/restarted web process does
-# not silently stop the six-hour refresh cycle.
-if os.environ.get("ENABLE_IN_PROCESS_SCHEDULER", "").lower() in {"1", "true", "yes"} or os.environ.get("RENDER_SERVICE_TYPE") != "web":
-    start_scheduler()
+# Enable in-process scheduler by default
+start_scheduler()
 
 @app.route("/")
 def index():
@@ -122,6 +119,17 @@ def api_stats():
     stats = database.get_stats()
     return jsonify({"status": "success", "stats": stats})
 
+@app.route("/api/admin/stats", methods=["GET"])
+def api_admin_stats():
+    admin_stats = database.get_admin_system_stats()
+    return jsonify({"status": "success", "system_stats": admin_stats})
+
+@app.route("/api/admin/scans", methods=["GET"])
+def api_admin_scans():
+    limit = int(request.args.get("limit", 20))
+    scans = database.get_scan_logs(limit=limit)
+    return jsonify({"status": "success", "scans": scans})
+
 @app.route("/api/scan", methods=["POST"])
 def api_scan():
     def run_scan():
@@ -129,16 +137,26 @@ def api_scan():
 
     thread = threading.Thread(target=run_scan)
     thread.start()
-    return jsonify({"status": "success", "message": "Staj ilanı taraması arka planda başlatıldı."})
+    return jsonify({"status": "success", "message": "Staj ilanı taraması başlatıldı."})
+
+@app.route("/api/scan/cron", methods=["GET", "POST"])
+def api_scan_cron():
+    token = request.headers.get("X-Cron-Secret") or request.args.get("secret")
+    if token != CRON_SECRET and os.environ.get("FLASK_ENV") != "development":
+        return jsonify({"status": "error", "message": "Unauthorized cron token"}), 403
+
+    res = run_all_scrapers()
+    return jsonify({"status": "success", "result": res})
 
 @app.route("/api/jobs/export", methods=["GET"])
 def api_export_jobs():
     category = request.args.get("category")
-    jobs = database.get_jobs(category=category, limit=500)
+    status = request.args.get("status")
+    jobs = database.get_jobs(category=category, status=status, limit=500)
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Başlık", "Şirket", "Konum", "Platform", "Kategori", "Çalışma Tipi", "Doğrudan Başvuru Linki", "Ekleme Tarihi"])
+    writer.writerow(["ID", "Başlık", "Şirket", "Konum", "Platform", "Kategori", "Çalışma Tipi", "Durum", "Doğrudan Başvuru Linki", "Ekleme Tarihi"])
 
     for job in jobs:
         writer.writerow([
@@ -149,6 +167,7 @@ def api_export_jobs():
             job["platform"],
             job["category"],
             job["work_type"],
+            job.get("status", "active"),
             job["url"],
             job["created_at"]
         ])

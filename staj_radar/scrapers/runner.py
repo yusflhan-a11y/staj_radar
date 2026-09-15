@@ -1,5 +1,8 @@
 import sys
 import os
+import time
+import threading
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
@@ -9,10 +12,21 @@ from scrapers.youthall_scraper import YouthallScraper
 from scrapers.coderspace_scraper import CoderspaceScraper
 from scrapers.kariyer_scraper import KariyerScraper
 import database
-from datetime import datetime
+
+SCAN_LOCK = threading.Lock()
 
 def run_all_scrapers():
-    print("[ScraperRunner] Scrapers başlatılıyor...")
+    # Job Lock / Distributed Mutex Lock
+    acquired = SCAN_LOCK.acquire(blocking=False)
+    if not acquired:
+        print("[ScraperRunner] Tarama zaten devam ediyor. İkinci eşzamanlı tarama engellendi.")
+        return {
+            "status": "locked",
+            "message": "Tarama zaten arka planda çalışıyor.",
+            "jobs_found": 0, "new_jobs": 0, "updated_jobs": 0, "expired_jobs": 0, "closed_jobs": 0
+        }
+
+    start_time = time.time()
     scan_id = database.record_scan_start()
     scan_started_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -23,48 +37,81 @@ def run_all_scrapers():
     ]
     
     total_found = 0
-    total_added = 0
+    new_jobs = 0
+    updated_jobs = 0
+    errors = []
     successful_platforms = []
-    
-    for scraper in scrapers:
-        try:
-            print(f"[ScraperRunner] {scraper.platform_name} taranıyor...")
-            jobs = scraper.fetch_jobs()
-            total_found += len(jobs)
 
-            # Empty results are valid. Only a successful HTTP response allows
-            # this source's unseen listings to be archived.
-            if scraper.last_fetch_succeeded:
-                successful_platforms.append(scraper.platform_name)
-            
-            for job in jobs:
-                # Ensure URL is direct and valid
-                if job.get("url") and job["url"].startswith("http"):
-                    job_id, is_new = database.save_job(job)
-                    if is_new:
-                        total_added += 1
-        except Exception as e:
-            print(f"[ScraperRunner] {scraper.platform_name} hatası: {e}")
-            
-    expired_count = database.expire_unseen_jobs(successful_platforms, scan_started_at)
-    database.record_scan_end(scan_id, total_found, total_added)
-    
-    if total_added > 0:
-        database.add_notification(
-            title=f"🔔 {total_added} Yeni Staj İlanı Eklendi!",
-            message=f"Taramada {total_added} yeni doğrudan başvurulabilir staj ilanı bulundu.",
-            n_type="info"
+    try:
+        # Step 1: Check application deadlines
+        deadline_expired = database.check_deadlines_and_status()
+
+        # Step 2: Run each platform scraper with try/catch isolation
+        for scraper in scrapers:
+            p_name = scraper.platform_name
+            try:
+                print(f"[ScraperRunner] {p_name} taranıyor...")
+                jobs = scraper.fetch_jobs()
+                total_found += len(jobs)
+
+                if getattr(scraper, "last_fetch_succeeded", True):
+                    successful_platforms.append(p_name)
+                
+                for job in jobs:
+                    if job.get("url") and job["url"].startswith("http"):
+                        job_id, is_new, is_updated = database.save_job(job)
+                        if is_new:
+                            new_jobs += 1
+                        elif is_updated:
+                            updated_jobs += 1
+
+            except Exception as e:
+                err_msg = f"{p_name} hatası: {str(e)}"
+                print(f"[ScraperRunner] {err_msg}")
+                errors.append(err_msg)
+
+        # Step 3: Expire listings absent from successful scans
+        unseen_expired = database.expire_unseen_jobs(successful_platforms, scan_started_at)
+        total_expired = deadline_expired + unseen_expired
+
+        duration = round(time.time() - start_time, 2)
+        errors_str = " | ".join(errors) if errors else ""
+        scan_status = "completed" if not errors else ("partial_error" if successful_platforms else "failed")
+
+        database.record_scan_end(
+            scan_id=scan_id,
+            jobs_found=total_found,
+            new_jobs_added=new_jobs,
+            updated_jobs=updated_jobs,
+            expired_jobs=total_expired,
+            closed_jobs=0,
+            duration_seconds=duration,
+            status=scan_status,
+            errors_log=errors_str
         )
 
-    if expired_count > 0:
-        database.add_notification(
-            title=f"📦 {expired_count} İlan Süresi Bitti",
-            message="Kaynağında artık görünmeyen ilanlar ‘Süresi Bitmiş’ kutusuna taşındı.",
-            n_type="info"
-        )
-        
-    print(f"[ScraperRunner] Tarama tamamlandı. Bulunan: {total_found}, Yeni: {total_added}, Süresi biten: {expired_count}")
-    return total_found, total_added, expired_count
+        if new_jobs > 0:
+            database.add_notification(
+                title=f"🔔 {new_jobs} Yeni Staj İlanı Eklendi!",
+                message=f"Taramada {new_jobs} yeni doğrudan başvurulabilir staj ilanı bulundu.",
+                n_type="info"
+            )
+
+        print(f"[ScraperRunner] Tarama tamamlandı ({duration} sn). Bulunan: {total_found}, Yeni: {new_jobs}, Güncellenen: {updated_jobs}, Süresi Dolar: {total_expired}")
+
+        return {
+            "status": scan_status,
+            "duration_seconds": duration,
+            "jobs_found": total_found,
+            "new_jobs": new_jobs,
+            "updated_jobs": updated_jobs,
+            "expired_jobs": total_expired,
+            "closed_jobs": 0,
+            "errors": errors
+        }
+
+    finally:
+        SCAN_LOCK.release()
 
 if __name__ == "__main__":
     run_all_scrapers()

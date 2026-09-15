@@ -1,6 +1,7 @@
 import sys
 import os
 import unittest
+import time
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -29,19 +30,27 @@ class TestStajRadar(unittest.TestCase):
         self.assertEqual(wt_hybrid, "hybrid")
 
     def test_save_and_retrieve_job(self):
+        unique_url = f"https://sampletech.com/job/{int(time.time() * 1000)}"
         test_job = {
-            "title": "Test Yazılım Stajyeri",
-            "company": "Sample Tech Inc",
+            "title": "Unit Test Yazılım Stajyeri",
+            "company": "Sample Unit Company",
             "location": "Ankara",
             "platform": "TestPlatform",
-            "url": "https://sampletech.com/job/12345",
+            "url": unique_url,
             "description": "Test açıklaması"
         }
-        job_id, is_new = save_job(test_job)
+        res = save_job(test_job)
+        job_id = res[0]
+        is_new = res[1]
         self.assertIsNotNone(job_id)
+        self.assertTrue(is_new)
         
-        job_id2, is_new2 = save_job(test_job)
+        res2 = save_job(test_job)
+        job_id2 = res2[0]
+        is_new2 = res2[1]
+        is_updated2 = res2[2]
         self.assertFalse(is_new2)
+        self.assertTrue(is_updated2)
         self.assertEqual(job_id, job_id2)
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staj Radar | Günlük Yazılım & YBS Staj İlanları</title>
-    <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS) öğrencileri için günlük güncellenen doğrudan başvurulabilir staj ilanları.">
+    <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS / İşletme) öğrencileri için 6 saatte bir güncellenen doğrudan başvurulabilir staj ilanları.">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -202,6 +202,12 @@
             color: var(--accent-green);
         }
 
+        .tab-btn.active-admin {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-ce);
+            color: var(--accent-ce);
+        }
+
         .badge-count {
             background: rgba(255, 255, 255, 0.15);
             color: var(--text-main);
@@ -385,6 +391,13 @@
             background: var(--accent-mis);
         }
 
+        .job-card.expired-border::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent-danger);
+        }
+
         .job-header {
             display: flex;
             justify-content: space-between;
@@ -503,6 +516,88 @@
             background: rgba(245, 158, 11, 0.2);
             border-color: var(--accent-amber);
             color: var(--accent-amber);
+        }
+
+        /* Admin / Status Dashboard */
+        .admin-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .scan-logs-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .scan-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .scan-table th, .scan-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .scan-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .status-badge.completed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-badge.running {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent-ce);
+        }
+
+        .status-badge.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-danger);
         }
 
         /* Pano / Notes Tab */
@@ -657,10 +752,13 @@
                 💻 Bilgisayar Mühendisliği <span class="badge-count" id="ce-count">0</span>
             </button>
             <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
-                📊 Yönetim Bilişim Sistemleri (YBS) <span class="badge-count" id="mis-count">0</span>
+                📊 YBS & İşletme / İktisadi Bilimler <span class="badge-count" id="mis-count">0</span>
             </button>
             <button class="tab-btn" id="tab-expired" onclick="switchTab('expired')">
-                📦 Süresi Bitmiş <span class="badge-count" id="expired-count">0</span>
+                📦 Süresi Dolmuş / Kapanmış <span class="badge-count" id="expired-count">0</span>
+            </button>
+            <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">
+                🛠️ Sistem Durumu & Admin
             </button>
             <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
                 📌 Ortak Pano & Notlar
@@ -674,7 +772,7 @@
         <div class="stats-bar" id="stats-bar">
             <div class="stat-pill"><span class="stat-num" id="stat-total">0</span> Toplam Aktif İlan</div>
             <div class="stat-pill"><span class="stat-num" id="stat-ce">0</span> Bilgisayar Mühendisliği</div>
-            <div class="stat-pill"><span class="stat-num" id="stat-mis">0</span> YBS</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-mis">0</span> YBS & İşletme</div>
             <div class="stat-pill"><span class="stat-num" id="stat-today">0</span> Bugün Eklenen</div>
         </div>
 
@@ -768,7 +866,7 @@
                 .then(data => {
                     if (data.status === 'success') {
                         userStatuses = data.statuses || {};
-                        if (currentTab === 'jobs') loadJobs();
+                        if (currentTab === 'jobs' || currentTab === 'expired') loadJobs();
                     }
                 });
         }
@@ -807,6 +905,9 @@
                 document.getElementById('tab-expired').className = 'tab-btn active-notes';
                 document.getElementById('controls-section').style.display = 'flex';
                 loadJobs();
+            } else if (tab === 'admin') {
+                document.getElementById('tab-admin').className = 'tab-btn active-admin';
+                loadAdminDashboard();
             }
         }
 
@@ -832,7 +933,7 @@
             container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
 
             let url = currentTab === 'expired'
-                ? '/api/jobs?status=expired&limit=100'
+                ? '/api/jobs?status=all_expired_closed&limit=100'
                 : `/api/jobs?category=${currentCategory}&limit=100`;
             if (currentWorkType) url += `&work_type=${currentWorkType}`;
             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
@@ -852,7 +953,7 @@
 
         function renderJobs(jobs) {
             const container = document.getElementById('content-area');
-            if (jobs.length === 0) {
+            if (!jobs || jobs.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">📭</div>
@@ -866,20 +967,24 @@
             jobs.forEach(job => {
                 const isCE = job.category === 'computer_engineering' || job.category === 'both';
                 const status = userStatuses[job.id] || '';
+                const isExpired = currentTab === 'expired' || job.is_active === 0 || job.status === 'expired' || job.status === 'closed';
 
                 let workTypeLabel = '🏢 Ofis';
                 if (job.work_type === 'remote') workTypeLabel = '🏠 Uzaktan';
                 if (job.work_type === 'hybrid') workTypeLabel = '⚡ Hibrit';
 
+                let badgeColor = isCE ? 'ce-border' : 'mis-border';
+                if (isExpired) badgeColor = 'expired-border';
+
                 html += `
-                    <div class="job-card ${isCE ? 'ce-border' : 'mis-border'}">
+                    <div class="job-card ${badgeColor}">
                         <div>
                             <div class="job-header">
                                 <div>
                                     <div class="company-name">${escapeHtml(job.company)}</div>
                                     <div class="job-title">${escapeHtml(job.title)}</div>
                                 </div>
-                                <span class="platform-tag">${escapeHtml(job.platform)}</span>
+                                <span class="platform-tag">${escapeHtml(job.platform)} ${isExpired ? '(Süresi Dolmuş)' : ''}</span>
                             </div>
                             <div class="job-details">
                                 <span class="detail-item">📍 ${escapeHtml(job.location)}</span>
@@ -889,7 +994,7 @@
                         </div>
                         <div class="job-actions">
                             <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener noreferrer" class="btn-apply">
-                                ${currentTab === 'expired' ? 'İlan Sayfasını Gör ↗' : 'Doğrudan Başvur ↗'}
+                                ${isExpired ? 'İlan Sayfasını Gör ↗' : 'Doğrudan Başvur ↗'}
                             </a>
                             <div class="user-actions">
                                 <button class="btn-user-act ${status === 'saved' ? 'saved' : ''}" title="Kaydet" onclick="toggleUserStatus(${job.id}, 'saved')">
@@ -939,8 +1044,106 @@
                     } else {
                         userStatuses[jobId] = newStatus;
                     }
-                    if (currentTab === 'jobs') loadJobs();
+                    if (currentTab === 'jobs' || currentTab === 'expired') loadJobs();
                 }
+            });
+        }
+
+        function loadAdminDashboard() {
+            const container = document.getElementById('content-area');
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Sistem durumu ve istatistikler yükleniyor...</p></div>';
+
+            Promise.all([
+                fetch('/api/admin/stats').then(res => res.json()),
+                fetch('/api/admin/scans').then(res => res.json())
+            ]).then(([statsRes, scansRes]) => {
+                if (statsRes.status !== 'success') return;
+                const sys = statsRes.system_stats;
+                const scans = scansRes.scans || [];
+
+                let html = `
+                    <div class="admin-dashboard">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <h3>🛠️ Sistem Durumu & Zamanlanmış Görev Paneli</h3>
+                            <button class="btn-scan" onclick="triggerScan()">🔄 Şimdi Tara (Manual Scan)</button>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <span class="metric-label">⏱️ Son Başarılı Tarama</span>
+                                <span class="metric-value">${escapeHtml(sys.last_successful_scan || 'Henüz Yapılmadı')}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">⏳ Sonraki Planlı Tarama (6h)</span>
+                                <span class="metric-value">${escapeHtml(sys.next_scheduled_scan || '6 saat içinde')}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">📡 Aktif İlanlar</span>
+                                <span class="metric-value" style="color:var(--accent-ce);">${sys.total_active_jobs}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">📦 Süresi Dolmuş İlanlar</span>
+                                <span class="metric-value" style="color:var(--accent-amber);">${sys.total_expired_jobs}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">🚫 Kapanmış İlanlar</span>
+                                <span class="metric-value" style="color:var(--accent-danger);">${sys.total_closed_jobs}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">💻 Bilgisayar Mühendisliği</span>
+                                <span class="metric-value">${sys.ce_jobs_count}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">📊 YBS & İşletme</span>
+                                <span class="metric-value">${sys.mis_jobs_count}</span>
+                            </div>
+                        </div>
+
+                        <div class="scan-logs-container">
+                            <h4 style="margin-bottom:14px;">📜 Tarama Geçmişi & Çalışma Günlüğü (Execution Logs)</h4>
+                            <table class="scan-table">
+                                <thead>
+                                    <tr>
+                                        <th>Başlangıç</th>
+                                        <th>Bitiş</th>
+                                        <th>Süre (sn)</th>
+                                        <th>Bulunan</th>
+                                        <th>Yeni</th>
+                                        <th>Güncellenen</th>
+                                        <th>Dolan</th>
+                                        <th>Durum</th>
+                                        <th>Hata / Not</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+                if (scans.length === 0) {
+                    html += `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Henüz kaydolmuş tarama geçmişi bulunmuyor.</td></tr>`;
+                } else {
+                    scans.forEach(sc => {
+                        let statusBadge = `<span class="status-badge ${sc.status}">${escapeHtml(sc.status)}</span>`;
+                        html += `
+                            <tr>
+                                <td>${escapeHtml(sc.started_at)}</td>
+                                <td>${escapeHtml(sc.finished_at || '-')}</td>
+                                <td>${sc.duration_seconds || 0}s</td>
+                                <td>${sc.jobs_found || 0}</td>
+                                <td><strong style="color:var(--accent-green);">${sc.new_jobs_added || 0}</strong></td>
+                                <td>${sc.updated_jobs || 0}</td>
+                                <td><span style="color:var(--accent-amber);">${sc.expired_jobs || 0}</span></td>
+                                <td>${statusBadge}</td>
+                                <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(sc.errors_log || '-')}</td>
+                            </tr>`;
+                    });
+                }
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+
+                container.innerHTML = html;
             });
         }
 
@@ -1052,14 +1255,18 @@
             fetch('/api/scan', { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
-                    alert('Staj ilanları taraması başlatıldı. 10-15 saniye sonra sayfayı yenileyebilirsiniz.');
-                    setTimeout(loadJobs, 10000);
+                    alert('Staj ilanı taraması başlatıldı. 10-15 saniye sonra istatistikleri ve sonuçları görebilirsiniz.');
+                    setTimeout(() => {
+                        loadStats();
+                        if (currentTab === 'admin') loadAdminDashboard();
+                        else if (currentTab === 'jobs' || currentTab === 'expired') loadJobs();
+                    }, 10000);
                 });
         }
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
 </body>

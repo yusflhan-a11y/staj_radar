@@ -4,9 +4,8 @@ import re
 import os
 import sys
 import importlib.util
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Spec loader to guarantee module loading regardless of working directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(BASE_DIR, "config.py")
 if not os.path.exists(config_path):
@@ -174,27 +173,51 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Recreate Jobs Table if not exists
+    # Create Jobs Table if not exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            external_id TEXT,
             hash_key TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             company TEXT NOT NULL,
             location TEXT DEFAULT 'Türkiye',
             platform TEXT NOT NULL,
+            source TEXT,
             url TEXT NOT NULL,
             description TEXT,
+            requirements TEXT,
             category TEXT NOT NULL,
             work_type TEXT DEFAULT 'office',
-            status TEXT DEFAULT 'new',
+            status TEXT DEFAULT 'active',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            published_at TIMESTAMP,
+            deadline TIMESTAMP,
+            scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expired_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Lightweight migration for databases created before expiry tracking existed.
+    # Migrations for existing databases
     existing_columns = {row["name"] for row in cursor.execute("PRAGMA table_info(jobs)")}
+    if "external_id" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN external_id TEXT")
+    if "source" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN source TEXT")
+    if "requirements" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN requirements TEXT")
+    if "published_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN published_at TIMESTAMP")
+    if "deadline" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN deadline TIMESTAMP")
+    if "last_checked_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN last_checked_at TIMESTAMP")
+    if "updated_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN updated_at TIMESTAMP")
     if "is_active" not in existing_columns:
         cursor.execute("ALTER TABLE jobs ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
     if "last_seen_at" not in existing_columns:
@@ -250,19 +273,36 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             finished_at TIMESTAMP,
+            duration_seconds REAL DEFAULT 0.0,
             jobs_found INTEGER DEFAULT 0,
             new_jobs_added INTEGER DEFAULT 0,
+            updated_jobs INTEGER DEFAULT 0,
+            expired_jobs INTEGER DEFAULT 0,
+            closed_jobs INTEGER DEFAULT 0,
+            errors_log TEXT DEFAULT '',
             status TEXT DEFAULT 'running'
         )
     """)
+
+    scan_cols = {row["name"] for row in cursor.execute("PRAGMA table_info(scans)")}
+    if "duration_seconds" not in scan_cols:
+        cursor.execute("ALTER TABLE scans ADD COLUMN duration_seconds REAL DEFAULT 0.0")
+    if "updated_jobs" not in scan_cols:
+        cursor.execute("ALTER TABLE scans ADD COLUMN updated_jobs INTEGER DEFAULT 0")
+    if "expired_jobs" not in scan_cols:
+        cursor.execute("ALTER TABLE scans ADD COLUMN expired_jobs INTEGER DEFAULT 0")
+    if "closed_jobs" not in scan_cols:
+        cursor.execute("ALTER TABLE scans ADD COLUMN closed_jobs INTEGER DEFAULT 0")
+    if "errors_log" not in scan_cols:
+        cursor.execute("ALTER TABLE scans ADD COLUMN errors_log TEXT DEFAULT ''")
 
     # Insert verified live direct internship postings (if not already present)
     for job in REAL_LIVE_JOBS:
         hash_key = generate_hash(job['title'], job['company'], job['url'])
         cursor.execute("""
-            INSERT OR IGNORE INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type, last_seen_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        """, (hash_key, job['title'], job['company'], job['location'], job['platform'], job['url'], job['description'], job['category'], job['work_type']))
+            INSERT OR IGNORE INTO jobs (hash_key, external_id, title, company, location, platform, source, url, description, category, work_type, status, is_active, last_seen_at, last_checked_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        """, (hash_key, hash_key, job['title'], job['company'], job['location'], job['platform'], job['platform'], job['url'], job['description'], job['category'], job['work_type']))
 
     conn.commit()
     conn.close()
@@ -300,20 +340,26 @@ def generate_hash(title, company, url=""):
     raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
+NON_CE_EXCLUSIONS = getattr(config, "NON_CE_EXCLUSIONS", [
+    "satış", "satis", "mağaza", "magaza", "perakende", "hukuk", "saha",
+    "servis", "adli", "muhasebe", "müşteri", "musteri", "danışmanı", "danismani"
+])
+
 def categorize_job(title, description=""):
     content = f"{title} {description}".lower()
+    title_lower = title.lower()
     
-    is_ce = any(kw in content for kw in CATEGORY_KEYWORDS["computer_engineering"])
-    is_mis = any(kw in content for kw in CATEGORY_KEYWORDS["mis"])
+    is_non_ce = any(ex in title_lower for ex in NON_CE_EXCLUSIONS)
+    
+    is_ce = not is_non_ce and any(kw in content for kw in CATEGORY_KEYWORDS["computer_engineering"])
+    is_mis = any(kw in content for kw in CATEGORY_KEYWORDS["mis"]) or is_non_ce
     
     if is_ce and is_mis:
         return "both"
     elif is_ce:
         return "computer_engineering"
-    elif is_mis:
-        return "mis"
     else:
-        return "both"
+        return "mis"
 
 def detect_work_type(title, description="", location=""):
     content = f"{title} {description} {location}".lower()
@@ -330,46 +376,57 @@ def save_job(job_data):
     company = job_data.get("company", "").strip()
     raw_url = job_data.get("url", "").strip()
     location = job_data.get("location", "Türkiye").strip()
-    platform = job_data.get("platform", "Bilinmeyen").strip()
+    platform = job_data.get("platform") or job_data.get("source", "Bilinmeyen")
+    platform = platform.strip()
     description = job_data.get("description", "").strip()
+    requirements = job_data.get("requirements", "").strip()
+    deadline = job_data.get("deadline")
+    published_at = job_data.get("published_at")
+    external_id = job_data.get("external_id") or generate_hash(title, company, raw_url)
     
     if "testcorp" in company.lower() or "unit test" in company.lower():
         conn.close()
-        return None, False
+        return None, False, False
 
     hash_key = generate_hash(title, company, raw_url)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
+    job_status = job_data.get("status", "active")
+    is_active = 0 if job_status in ("expired", "closed") else 1
     
     try:
         cursor.execute("""
-            INSERT INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (hash_key, title, company, location, platform, raw_url, description, category, work_type))
+            INSERT INTO jobs (
+                hash_key, external_id, title, company, location, platform, source, url, 
+                description, requirements, category, work_type, status, is_active, 
+                published_at, deadline, last_checked_at, last_seen_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        """, (
+            hash_key, external_id, title, company, location, platform, platform, raw_url, 
+            description, requirements, category, work_type, job_status, is_active, 
+            published_at, deadline
+        ))
         conn.commit()
         job_id = cursor.lastrowid
         conn.close()
-        return job_id, True
+        return job_id, True, False # (job_id, is_new=True, is_updated=False)
     except sqlite3.IntegrityError:
         cursor.execute("""
             UPDATE jobs 
-            SET url = ?, description = ?, location = ?, work_type = ?, category = ?,
-                scanned_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP,
-                is_active = 1, expired_at = NULL
+            SET url = ?, description = ?, requirements = ?, location = ?, work_type = ?, category = ?,
+                scanned_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP, last_checked_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP, is_active = ?, status = ?
             WHERE hash_key = ?
-        """, (raw_url, description, location, work_type, category, hash_key))
+        """, (raw_url, description, requirements, location, work_type, category, is_active, job_status, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
         conn.commit()
         conn.close()
-        return (row["id"] if row else None), False
+        return (row["id"] if row else None), False, True # (job_id, is_new=False, is_updated=True)
 
 def expire_unseen_jobs(platforms, scan_started_at):
-    """Archive active listings absent from a successful source scan.
-
-    A failed/blocked scraper must never expire listings, hence callers pass only
-    platforms whose request returned successfully.
-    """
+    """Archive active listings absent from a successful source scan."""
     if not platforms:
         return 0
 
@@ -378,13 +435,30 @@ def expire_unseen_jobs(platforms, scan_started_at):
     placeholders = ", ".join("?" for _ in platforms)
     cursor.execute(
         f"""UPDATE jobs
-            SET is_active = 0, expired_at = CURRENT_TIMESTAMP
+            SET is_active = 0, status = 'expired', expired_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
             WHERE is_active = 1
               AND platform IN ({placeholders})
               AND (last_seen_at IS NULL OR last_seen_at < ?)
         """,
         [*platforms, scan_started_at],
     )
+    expired_count = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return expired_count
+
+def check_deadlines_and_status():
+    """Check for past application deadlines and auto-mark as expired."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE jobs
+        SET is_active = 0, status = 'expired', expired_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE is_active = 1
+          AND deadline IS NOT NULL
+          AND deadline != ''
+          AND deadline < CURRENT_TIMESTAMP
+    """)
     expired_count = cursor.rowcount
     conn.commit()
     conn.close()
@@ -398,10 +472,18 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
     params = []
 
     if status == "expired":
-        query += " AND is_active = 0"
+        query += " AND (is_active = 0 OR status = 'expired')"
+    elif status == "closed":
+        query += " AND status = 'closed'"
+    elif status == "all_expired_closed":
+        query += " AND (is_active = 0 OR status IN ('expired', 'closed'))"
+    elif status and status not in ('all', 'new', 'saved', 'applied'):
+        query += " AND status = ?"
+        params.append(status)
     else:
-        query += " AND is_active = 1"
-    
+        # Default: show active jobs
+        query += " AND is_active = 1 AND status NOT IN ('expired', 'closed')"
+
     if category:
         if category == "computer_engineering":
             query += " AND (category = 'computer_engineering' OR category = 'both')"
@@ -419,10 +501,6 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
     if work_type:
         query += " AND work_type = ?"
         params.append(work_type)
-
-    if status and status not in ('all', 'expired'):
-        query += " AND status = ?"
-        params.append(status)
         
     if platform and platform != 'all':
         query += " AND platform = ?"
@@ -441,7 +519,8 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
 def update_job_status(job_id, status):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE jobs SET status = ? WHERE id = ?", (status, job_id))
+    is_active = 0 if status in ("expired", "closed") else 1
+    cursor.execute("UPDATE jobs SET status = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (status, is_active, job_id))
     conn.commit()
     conn.close()
     return True
@@ -501,16 +580,16 @@ def get_stats():
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
+    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed', 'ignored') AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
     total_jobs = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed', 'ignored') AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
     ce_jobs = cursor.fetchone()["ce"]
 
-    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed', 'ignored') AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
     mis_jobs = cursor.fetchone()["mis"]
 
-    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
+    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed', 'ignored') AND DATE(created_at) = DATE('now')")
     today_jobs = cursor.fetchone()["today"]
 
     cursor.execute("SELECT COUNT(*) as applied FROM jobs WHERE status = 'applied'")
@@ -519,7 +598,7 @@ def get_stats():
     cursor.execute("SELECT COUNT(*) as saved FROM jobs WHERE status = 'saved'")
     saved_jobs = cursor.fetchone()["saved"]
 
-    cursor.execute("SELECT COUNT(*) as expired FROM jobs WHERE is_active = 0 AND status != 'ignored'")
+    cursor.execute("SELECT COUNT(*) as expired FROM jobs WHERE is_active = 0 OR status IN ('expired', 'closed')")
     expired_jobs = cursor.fetchone()["expired"]
 
     unread_notifications = get_unread_notification_count()
@@ -539,21 +618,79 @@ def get_stats():
 def record_scan_start():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO scans (status) VALUES ('running')")
+    cursor.execute("INSERT INTO scans (status, started_at) VALUES ('running', CURRENT_TIMESTAMP)")
     conn.commit()
     scan_id = cursor.lastrowid
     conn.close()
     return scan_id
 
-def record_scan_end(scan_id, jobs_found, new_jobs_added):
+def record_scan_end(scan_id, jobs_found, new_jobs_added, updated_jobs=0, expired_jobs=0, closed_jobs=0, duration_seconds=0.0, status='completed', errors_log=''):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE scans 
-        SET finished_at = CURRENT_TIMESTAMP, jobs_found = ?, new_jobs_added = ?, status = 'completed'
+        SET finished_at = CURRENT_TIMESTAMP, jobs_found = ?, new_jobs_added = ?, 
+            updated_jobs = ?, expired_jobs = ?, closed_jobs = ?, duration_seconds = ?, 
+            errors_log = ?, status = ?
         WHERE id = ?
-    """, (jobs_found, new_jobs_added, scan_id))
+    """, (jobs_found, new_jobs_added, updated_jobs, expired_jobs, closed_jobs, duration_seconds, errors_log, status, scan_id))
     conn.commit()
     conn.close()
+
+def get_admin_system_stats():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM scans WHERE status = 'completed' ORDER BY finished_at DESC LIMIT 1")
+    last_scan_row = cursor.fetchone()
+    last_scan = dict(last_scan_row) if last_scan_row else None
+
+    cursor.execute("SELECT COUNT(*) as active FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed')")
+    total_active = cursor.fetchone()["active"]
+
+    cursor.execute("SELECT COUNT(*) as expired FROM jobs WHERE status = 'expired' OR (is_active = 0 AND status != 'closed')")
+    total_expired = cursor.fetchone()["expired"]
+
+    cursor.execute("SELECT COUNT(*) as closed FROM jobs WHERE status = 'closed'")
+    total_closed = cursor.fetchone()["closed"]
+
+    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed') AND (category = 'computer_engineering' OR category = 'both')")
+    ce_jobs = cursor.fetchone()["ce"]
+
+    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE is_active = 1 AND status NOT IN ('expired', 'closed') AND (category = 'mis' OR category = 'both')")
+    mis_jobs = cursor.fetchone()["mis"]
+
+    last_scan_time = last_scan["finished_at"] if last_scan else None
+    next_scan_time = None
+    if last_scan_time:
+        try:
+            dt = datetime.fromisoformat(last_scan_time.replace("Z", ""))
+            next_dt = dt + timedelta(hours=6)
+            next_scan_time = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            next_scan_time = "Yaklaşık 6 saat sonra"
+
+    conn.close()
+    return {
+        "last_successful_scan": last_scan_time or "Henüz Yapılmadı",
+        "next_scheduled_scan": next_scan_time or "6 saat içinde",
+        "total_active_jobs": total_active,
+        "total_expired_jobs": total_expired,
+        "total_closed_jobs": total_closed,
+        "ce_jobs_count": ce_jobs,
+        "mis_jobs_count": mis_jobs,
+        "last_scan_metrics": last_scan or {
+            "jobs_found": 0, "new_jobs_added": 0, "updated_jobs": 0,
+            "expired_jobs": 0, "closed_jobs": 0, "duration_seconds": 0.0, "status": "none"
+        }
+    }
+
+def get_scan_logs(limit=20):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM scans ORDER BY started_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
 
 init_db()
