@@ -3,27 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staj Radar | Günlük Yazılım & YBS Staj İlanları</title>
+    <title>Staj Radar | Canlı Yazılım & YBS Staj İlanları</title>
     <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS / İşletme) öğrencileri için 6 saatte bir güncellenen doğrudan başvurulabilir staj ilanları.">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --bg-primary: #0a0f1d;
-            --bg-secondary: #131b2e;
-            --card-bg: rgba(19, 27, 46, 0.7);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --text-main: #f1f5f9;
+            --bg-body: #090d16;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --bg-card-hover: rgba(24, 33, 53, 0.85);
+            --bg-glass: rgba(15, 23, 42, 0.8);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.18);
+            
+            --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --accent-ce: #38bdf8;
-            --accent-ce-glow: rgba(56, 189, 248, 0.2);
-            --accent-mis: #a855f7;
-            --accent-mis-glow: rgba(168, 85, 247, 0.2);
-            --accent-green: #10b981;
-            --accent-amber: #f59e0b;
-            --accent-danger: #ef4444;
-            --radius-lg: 16px;
-            --radius-md: 10px;
-            --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --text-subtle: #64748b;
+
+            --ce-accent: #38bdf8;
+            --ce-glow: rgba(56, 189, 248, 0.15);
+            --ce-border: rgba(56, 189, 248, 0.3);
+
+            --mis-accent: #c084fc;
+            --mis-glow: rgba(192, 132, 252, 0.15);
+            --mis-border: rgba(192, 132, 252, 0.3);
+
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+
+            --danger: #f43f5e;
+            --danger-glow: rgba(244, 63, 94, 0.15);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-full: 9999px;
+
+            --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
@@ -34,134 +59,232 @@
 
         body {
             font-family: var(--font-family);
-            background-color: var(--bg-primary);
+            background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.07) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.07) 0%, transparent 40%);
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(192, 132, 252, 0.08) 0%, transparent 45%);
+            background-attachment: fixed;
+            line-height: 1.5;
             padding-bottom: 60px;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 0 auto;
             padding: 0 20px;
         }
 
-        /* Header */
+        /* Glass Header */
         header {
-            background: rgba(10, 15, 29, 0.85);
-            backdrop-filter: blur(12px);
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
             z-index: 100;
-            border-bottom: 1px solid var(--card-border);
-            padding: 16px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 0;
         }
 
-        .header-content {
+        .header-inner {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
             gap: 16px;
+            flex-wrap: wrap;
         }
 
-        .logo {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             text-decoration: none;
-            color: var(--text-main);
+            color: inherit;
         }
 
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--accent-ce), var(--accent-mis));
-            border-radius: 12px;
+        .brand-logo-img {
+            height: 44px;
+            max-width: 180px;
+            object-fit: contain;
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            padding: 4px 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .brand-logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--ce-accent), var(--mis-accent));
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 22px;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
         }
 
-        .logo-img {
-            height: 46px;
-            max-width: 180px;
-            object-fit: contain;
-            border-radius: 10px;
-            background: #fdfbf7;
-            padding: 3px 8px;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+        .brand-title {
+            display: flex;
+            flex-direction: column;
         }
 
-        .logo-text h1 {
-            font-size: 22px;
-            font-weight: 700;
-            background: linear-gradient(to right, #ffffff, #cbd5e1);
+        .brand-title h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 30%, var(--text-muted));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .logo-text p {
+        .brand-title p {
             font-size: 12px;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
-        /* Email Sync Bar */
-        .user-email-bar {
+        /* Header Right Controls */
+        .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
-            border-radius: 30px;
-            padding: 6px 14px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .user-email-bar input {
+        .sync-email-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            padding: 4px 6px 4px 14px;
+            transition: var(--transition);
+        }
+
+        .sync-email-box:focus-within {
+            border-color: var(--ce-accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px var(--ce-glow);
+        }
+
+        .sync-email-box input {
             background: transparent;
             border: none;
             color: var(--text-main);
+            font-family: inherit;
             font-size: 13px;
             outline: none;
-            width: 200px;
+            width: 190px;
         }
 
-        .user-email-bar button {
-            background: linear-gradient(135deg, var(--accent-ce), #0284c7);
+        .sync-email-box input::placeholder {
+            color: var(--text-subtle);
+        }
+
+        .btn-sync {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
             border: none;
-            color: white;
+            color: #ffffff;
             padding: 6px 14px;
-            border-radius: 20px;
+            border-radius: var(--radius-full);
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: var(--transition);
         }
 
-        .user-email-bar button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+        .btn-sync:hover {
+            opacity: 0.92;
+            transform: scale(1.02);
         }
 
-        /* Nav Tabs */
+        /* System Status Bar */
+        .system-ticker {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .quick-metrics {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .metric-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .metric-pill strong {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        /* Navigation Segmented Tabs */
+        .nav-wrapper {
+            margin: 20px 0 24px 0;
+        }
+
         .nav-tabs {
             display: flex;
             gap: 8px;
-            margin: 24px 0 16px 0;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            padding: 6px;
+            border-radius: var(--radius-lg);
             overflow-x: auto;
-            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .tab-btn {
-            background: var(--bg-secondary);
-            border: 1px solid var(--card-border);
+            background: transparent;
+            border: 1px solid transparent;
             color: var(--text-muted);
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: var(--radius-md);
             font-size: 14px;
             font-weight: 600;
@@ -169,356 +292,459 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.2s;
+            transition: var(--transition);
             white-space: nowrap;
+            font-family: inherit;
         }
 
         .tab-btn:hover {
             color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .tab-btn.active-ce {
-            background: var(--accent-ce-glow);
-            border-color: var(--accent-ce);
-            color: var(--accent-ce);
+            background: var(--ce-glow);
+            border-color: var(--ce-border);
+            color: var(--ce-accent);
         }
 
         .tab-btn.active-mis {
-            background: var(--accent-mis-glow);
-            border-color: var(--accent-mis);
-            color: var(--accent-mis);
+            background: var(--mis-glow);
+            border-color: var(--mis-border);
+            color: var(--mis-accent);
+        }
+
+        .tab-btn.active-expired {
+            background: var(--danger-glow);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: var(--danger);
         }
 
         .tab-btn.active-notes {
-            background: rgba(245, 158, 11, 0.15);
-            border-color: var(--accent-amber);
-            color: var(--accent-amber);
+            background: var(--warning-glow);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--warning);
         }
 
         .tab-btn.active-notifications {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: var(--accent-green);
-            color: var(--accent-green);
+            background: var(--success-glow);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--success);
         }
 
         .tab-btn.active-admin {
             background: rgba(56, 189, 248, 0.15);
-            border-color: var(--accent-ce);
-            color: var(--accent-ce);
+            border-color: var(--ce-border);
+            color: var(--ce-accent);
         }
 
-        .badge-count {
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--text-main);
+        .tab-badge {
             font-size: 11px;
             padding: 2px 7px;
-            border-radius: 10px;
+            border-radius: var(--radius-full);
+            background: rgba(255, 255, 255, 0.1);
             font-weight: 700;
         }
 
-        .stats-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-pill {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .stat-num {
-            font-weight: 700;
-            color: var(--accent-ce);
-            font-size: 14px;
-        }
-
-        /* Controls Section */
-        .controls-section {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+        /* Controls / Filter Toolbar */
+        .toolbar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             padding: 16px 20px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
             gap: 16px;
+            flex-wrap: wrap;
         }
 
-        .search-box {
+        .search-container {
             position: relative;
             flex: 1;
-            min-width: 250px;
+            min-width: 260px;
         }
 
-        .search-box input {
+        .search-container input {
             width: 100%;
-            background: rgba(10, 15, 29, 0.6);
-            border: 1px solid var(--card-border);
+            background: rgba(9, 13, 22, 0.7);
+            border: 1px solid var(--border-subtle);
             color: var(--text-main);
-            padding: 10px 16px 10px 40px;
+            padding: 10px 16px 10px 42px;
             border-radius: var(--radius-md);
             font-size: 14px;
+            font-family: inherit;
             outline: none;
+            transition: var(--transition);
         }
 
-        .search-box input:focus {
-            border-color: var(--accent-ce);
+        .search-container input:focus {
+            border-color: var(--ce-accent);
+            box-shadow: 0 0 0 3px var(--ce-glow);
         }
 
-        .search-box::before {
-            content: "🔍";
+        .search-container input::placeholder {
+            color: var(--text-subtle);
+        }
+
+        .search-icon {
             position: absolute;
-            left: 12px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 14px;
-            opacity: 0.6;
+            font-size: 15px;
+            color: var(--text-subtle);
+            pointer-events: none;
         }
 
         .filter-group {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            align-items: center;
             flex-wrap: wrap;
         }
 
         .filter-chip {
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-subtle);
             color: var(--text-muted);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 7px 14px;
+            border-radius: var(--radius-full);
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .filter-chip:hover {
+            color: var(--text-main);
+            border-color: var(--border-hover);
         }
 
         .filter-chip.active {
             background: rgba(255, 255, 255, 0.12);
             color: var(--text-main);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.25);
+            font-weight: 600;
         }
 
-        .btn-export {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--accent-green);
-            color: var(--accent-green);
-            padding: 8px 16px;
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
             border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-        .btn-export:hover {
-            background: var(--accent-green);
-            color: white;
+            transition: var(--transition);
+            font-family: inherit;
+            border: 1px solid transparent;
         }
 
         .btn-scan {
-            background: rgba(56, 189, 248, 0.15);
-            border: 1px solid var(--accent-ce);
-            color: var(--accent-ce);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
+            background: var(--ce-glow);
+            border-color: var(--ce-border);
+            color: var(--ce-accent);
         }
 
         .btn-scan:hover {
-            background: var(--accent-ce);
-            color: white;
+            background: var(--ce-accent);
+            color: #090d16;
+            font-weight: 700;
         }
 
-        /* Jobs Grid */
+        .btn-export {
+            background: var(--success-glow);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .btn-export:hover {
+            background: var(--success);
+            color: #090d16;
+            font-weight: 700;
+        }
+
+        /* Job Card Grid */
         .jobs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 20px;
         }
 
         .job-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
-            padding: 20px;
+            padding: 22px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: var(--transition);
             position: relative;
             overflow: hidden;
+            box-shadow: var(--shadow-card);
         }
 
         .job-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6);
         }
 
-        .job-card.ce-border::before {
-            content: '';
+        .job-card-indicator {
             position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            background: var(--accent-ce);
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
         }
 
-        .job-card.mis-border::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            background: var(--accent-mis);
+        .job-card.ce .job-card-indicator {
+            background: linear-gradient(90deg, var(--ce-accent), #0284c7);
         }
 
-        .job-card.expired-border::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            background: var(--accent-danger);
+        .job-card.mis .job-card-indicator {
+            background: linear-gradient(90deg, var(--mis-accent), #9333ea);
         }
 
-        .job-header {
+        .job-card.expired .job-card-indicator {
+            background: linear-gradient(90deg, var(--danger), #be123c);
+        }
+
+        .card-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
-            gap: 10px;
+            gap: 12px;
+            margin-bottom: 10px;
         }
 
         .company-name {
             font-size: 13px;
             color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .job-title {
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-top: 4px;
-            line-height: 1.3;
-        }
-
-        .platform-tag {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 6px;
             font-weight: 600;
+            letter-spacing: 0.01em;
+            text-transform: uppercase;
+        }
+
+        .platform-badge {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
             background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
             color: var(--text-muted);
             white-space: nowrap;
         }
 
-        .job-details {
-            display: flex;
-            gap: 12px;
-            margin: 12px 0;
-            font-size: 12px;
-            color: var(--text-muted);
-            flex-wrap: wrap;
+        .job-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.35;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
         }
 
-        .detail-item {
+        .meta-pills {
             display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .meta-pill {
+            display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .skills-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .skill-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ce-accent);
+            background: var(--ce-glow);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .skill-tag.mis-tag {
+            color: var(--mis-accent);
+            background: var(--mis-glow);
         }
 
         .job-desc {
             font-size: 13px;
             color: #cbd5e1;
-            line-height: 1.5;
+            line-height: 1.55;
             margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .job-actions {
+        .card-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            border-top: 1px solid var(--card-border);
-            padding-top: 14px;
+            gap: 12px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 16px;
+        }
+
+        .deadline-badge {
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-muted);
+        }
+
+        .deadline-badge.urgent {
+            color: var(--danger);
         }
 
         .btn-apply {
-            background: linear-gradient(135deg, var(--accent-ce), #0284c7);
-            color: white;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
             text-decoration: none;
             padding: 9px 18px;
             border-radius: var(--radius-md);
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: var(--transition);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
         }
 
         .btn-apply:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            transform: scale(1.03);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
         }
 
-        .user-actions {
+        .user-toggles {
             display: flex;
             gap: 6px;
         }
 
-        .btn-user-act {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
+        .btn-icon-toggle {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
             color: var(--text-muted);
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
+            transition: var(--transition);
         }
 
-        .btn-user-act:hover {
+        .btn-icon-toggle:hover {
             color: var(--text-main);
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .btn-user-act.applied {
-            background: rgba(16, 185, 129, 0.2);
-            border-color: var(--accent-green);
-            color: var(--accent-green);
+        .btn-icon-toggle.saved {
+            background: var(--warning-glow);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--warning);
         }
 
-        .btn-user-act.saved {
-            background: rgba(245, 158, 11, 0.2);
-            border-color: var(--accent-amber);
-            color: var(--accent-amber);
+        .btn-icon-toggle.applied {
+            background: var(--success-glow);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: var(--success);
         }
 
-        /* Admin / Status Dashboard */
+        /* Skeleton Loading Cards */
+        .skeleton-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .skeleton-line {
+            height: 14px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Empty & Error States */
+        .state-container {
+            text-align: center;
+            padding: 64px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .state-icon {
+            font-size: 48px;
+            margin-bottom: 14px;
+            opacity: 0.8;
+        }
+
+        .state-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .state-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Admin Dashboard */
         .admin-dashboard {
             display: flex;
             flex-direction: column;
@@ -532,10 +758,10 @@
         }
 
         .metric-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 16px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
             gap: 6px;
@@ -544,18 +770,18 @@
         .metric-label {
             font-size: 12px;
             color: var(--text-muted);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .metric-value {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 800;
             color: var(--text-main);
         }
 
-        .scan-logs-container {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+        .scan-logs-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             padding: 20px;
             overflow-x: auto;
@@ -570,12 +796,13 @@
 
         .scan-table th, .scan-table td {
             padding: 12px 14px;
-            border-bottom: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .scan-table th {
             color: var(--text-muted);
             font-weight: 600;
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .status-badge {
@@ -583,27 +810,28 @@
             padding: 3px 8px;
             border-radius: 6px;
             font-weight: 700;
+            display: inline-block;
         }
 
         .status-badge.completed {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--accent-green);
+            background: var(--success-glow);
+            color: var(--success);
         }
 
         .status-badge.running {
-            background: rgba(56, 189, 248, 0.2);
-            color: var(--accent-ce);
+            background: var(--ce-glow);
+            color: var(--ce-accent);
         }
 
         .status-badge.failed {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--accent-danger);
+            background: var(--danger-glow);
+            color: var(--danger);
         }
 
-        /* Pano / Notes Tab */
-        .notes-container {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+        /* Notes & Notifications */
+        .panel-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             padding: 24px;
         }
@@ -613,18 +841,18 @@
             flex-direction: column;
             gap: 12px;
             margin-bottom: 24px;
-            background: rgba(10, 15, 29, 0.5);
-            padding: 16px;
+            background: rgba(9, 13, 22, 0.6);
+            padding: 18px;
             border-radius: var(--radius-md);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-subtle);
         }
 
         .note-form input, .note-form textarea {
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-subtle);
             color: var(--text-main);
-            padding: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
             font-family: inherit;
             font-size: 13px;
             outline: none;
@@ -632,154 +860,145 @@
 
         .note-form textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 90px;
         }
 
         .note-form button {
             align-self: flex-end;
-            background: var(--accent-amber);
-            color: #000;
+            background: var(--warning);
+            color: #090d16;
             font-weight: 700;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 10px 22px;
+            border-radius: var(--radius-md);
             cursor: pointer;
-        }
-
-        .notes-list {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
+            font-family: inherit;
         }
 
         .note-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 14px;
-        }
-
-        .note-author {
-            font-weight: 700;
-            color: var(--accent-amber);
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .note-time {
-            font-size: 11px;
-            color: var(--text-muted);
-            float: right;
-        }
-
-        .note-msg {
-            font-size: 13px;
-            color: var(--text-main);
-            line-height: 1.4;
-        }
-
-        /* Notifications Tab */
-        .notifications-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
         }
 
         .notification-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
             padding: 16px;
             display: flex;
             gap: 14px;
             align-items: flex-start;
-        }
-
-        .notification-icon {
-            font-size: 20px;
-        }
-
-        .notification-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        .notification-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-icon {
-            font-size: 48px;
             margin-bottom: 12px;
-            opacity: 0.5;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .header-inner {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sync-email-box {
+                width: 100%;
+            }
+
+            .sync-email-box input {
+                flex: 1;
+                width: auto;
+            }
+
+            .jobs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .filter-group {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
         }
     </style>
 </head>
 <body>
 
+    <!-- Glass Header -->
     <header>
-        <div class="container header-content">
-            <a href="#" class="logo" onclick="switchCategory('computer_engineering')">
-                <img src="/static/logo.png" alt="Staj Radar Logo" class="logo-img" id="custom-logo-img" onerror="this.style.display='none'; document.getElementById('default-logo-icon').style.display='flex';" onload="document.getElementById('default-logo-icon').style.display='none';">
-                <div class="logo-icon" id="default-logo-icon" style="display:none;">📡</div>
-                <div class="logo-text">
+        <div class="container header-inner">
+            <a href="#" class="brand" onclick="switchCategory('computer_engineering')">
+                <img src="/static/logo.png" alt="Staj Radar Logo" class="brand-logo-img" id="custom-logo-img" onerror="this.style.display='none'; document.getElementById('default-logo-icon').style.display='flex';" onload="document.getElementById('default-logo-icon').style.display='none';">
+                <div class="brand-logo-icon" id="default-logo-icon" style="display:none;">📡</div>
+                <div class="brand-title">
                     <h1>Staj Radar</h1>
                     <p>Günlük Doğrudan Başvurulabilir Staj İlanları</p>
                 </div>
             </a>
 
-            <div class="user-email-bar">
-                <span>📧</span>
-                <input type="email" id="userEmail" placeholder="E-posta ile Takip Et (Opsiyonel)">
-                <button onclick="saveUserEmail()">Kaydet / Eşitle</button>
+            <div class="header-actions">
+                <div class="sync-email-box">
+                    <span>📧</span>
+                    <input type="email" id="userEmail" placeholder="E-posta ile durum eşitle">
+                    <button class="btn-sync" onclick="saveUserEmail()">Eşitle</button>
+                </div>
             </div>
         </div>
     </header>
 
     <div class="container">
-        <!-- Tabs -->
-        <div class="nav-tabs">
-            <button class="tab-btn active-ce" id="tab-ce" onclick="switchCategory('computer_engineering')">
-                💻 Bilgisayar Mühendisliği <span class="badge-count" id="ce-count">0</span>
-            </button>
-            <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
-                📊 YBS & İşletme / İktisadi Bilimler <span class="badge-count" id="mis-count">0</span>
-            </button>
-            <button class="tab-btn" id="tab-expired" onclick="switchTab('expired')">
-                📦 Süresi Dolmuş / Kapanmış <span class="badge-count" id="expired-count">0</span>
-            </button>
-            <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">
-                🛠️ Sistem Durumu & Admin
-            </button>
-            <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
-                📌 Ortak Pano & Notlar
-            </button>
-            <button class="tab-btn" id="tab-notifications" onclick="switchTab('notifications')">
-                🔔 Bildirimler <span class="badge-count" id="notif-badge" style="display:none;">0</span>
-            </button>
+        <!-- Live System Ticker Bar -->
+        <div class="system-ticker">
+            <div class="status-indicator">
+                <span class="pulse-dot"></span>
+                <span>Otomatik Sistem Aktif (6h Tarama)</span>
+            </div>
+            <div class="quick-metrics">
+                <span class="metric-pill">Toplam Aktif: <strong id="stat-total">0</strong></span>
+                <span class="metric-pill">💻 Bilgisayar: <strong id="stat-ce">0</strong></span>
+                <span class="metric-pill">📊 YBS & İşletme: <strong id="stat-mis">0</strong></span>
+                <span class="metric-pill">🔥 Bugün Eklenen: <strong id="stat-today">0</strong></span>
+            </div>
         </div>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar" id="stats-bar">
-            <div class="stat-pill"><span class="stat-num" id="stat-total">0</span> Toplam Aktif İlan</div>
-            <div class="stat-pill"><span class="stat-num" id="stat-ce">0</span> Bilgisayar Mühendisliği</div>
-            <div class="stat-pill"><span class="stat-num" id="stat-mis">0</span> YBS & İşletme</div>
-            <div class="stat-pill"><span class="stat-num" id="stat-today">0</span> Bugün Eklenen</div>
+        <!-- Navigation Tabs -->
+        <div class="nav-wrapper">
+            <div class="nav-tabs">
+                <button class="tab-btn active-ce" id="tab-ce" onclick="switchCategory('computer_engineering')">
+                    💻 Bilgisayar Mühendisliği <span class="tab-badge" id="ce-count">0</span>
+                </button>
+                <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
+                    📊 YBS & İşletme <span class="tab-badge" id="mis-count">0</span>
+                </button>
+                <button class="tab-btn" id="tab-expired" onclick="switchTab('expired')">
+                    📦 Süresi Dolmuş / Kapanmış <span class="tab-badge" id="expired-count">0</span>
+                </button>
+                <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">
+                    🛠️ Sistem Durumu & Admin
+                </button>
+                <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
+                    📌 Ortak Pano
+                </button>
+                <button class="tab-btn" id="tab-notifications" onclick="switchTab('notifications')">
+                    🔔 Bildirimler <span class="tab-badge" id="notif-badge" style="display:none;">0</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Controls -->
-        <div class="controls-section" id="controls-section">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="İlan başlığı, şirket veya konum ara..." oninput="handleSearch()">
+        <!-- Search & Filter Controls Toolbar -->
+        <div class="toolbar" id="controls-section">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="İlan başlığı, şirket, şehir veya yetenek ara..." oninput="handleSearch()">
             </div>
 
             <div class="filter-group">
@@ -789,20 +1008,24 @@
                 <button class="filter-chip" data-wtype="office" onclick="filterWorkType(this, 'office')">🏢 Ofis</button>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-scan" onclick="triggerScan()">🔄 Şimdi Tara</button>
-                <a href="/api/jobs/export" class="btn-export" id="exportBtn">📥 CSV İndir</a>
+            <div class="toolbar-actions">
+                <button class="btn-action btn-scan" id="scanBtn" onclick="triggerScan()">🔄 Şimdi Tara</button>
+                <a href="/api/jobs/export" class="btn-action btn-export" id="exportBtn">📥 CSV İndir</a>
             </div>
         </div>
 
-        <!-- Content Area -->
+        <!-- Dynamic Main Content Area -->
         <div id="content-area">
-            <div class="jobs-grid" id="jobsGrid">
-                <!-- Dynamically Rendered Jobs -->
+            <!-- Skeleton Loading State by Default -->
+            <div class="jobs-grid">
+                <div class="skeleton-card"><div class="skeleton-line" style="width:40%;"></div><div class="skeleton-line" style="width:75%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+                <div class="skeleton-card"><div class="skeleton-line" style="width:30%;"></div><div class="skeleton-line" style="width:80%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+                <div class="skeleton-card"><div class="skeleton-line" style="width:50%;"></div><div class="skeleton-line" style="width:65%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
             </div>
         </div>
     </div>
 
+    <!-- Application Script -->
     <script>
         let currentCategory = 'computer_engineering';
         let currentTab = 'jobs';
@@ -883,7 +1106,6 @@
             }
 
             document.getElementById('controls-section').style.display = 'flex';
-            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'flex';
             document.getElementById('exportBtn').href = `/api/jobs/export?category=${cat}`;
             loadJobs();
         }
@@ -891,21 +1113,22 @@
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn');
-            document.getElementById('controls-section').style.display = 'none';
-            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'none';
-
+            
             if (tab === 'notes') {
+                document.getElementById('controls-section').style.display = 'none';
                 document.getElementById('tab-notes').className = 'tab-btn active-notes';
                 loadNotes();
             } else if (tab === 'notifications') {
+                document.getElementById('controls-section').style.display = 'none';
                 document.getElementById('tab-notifications').className = 'tab-btn active-notifications';
                 loadNotifications();
                 markNotificationsRead();
             } else if (tab === 'expired') {
-                document.getElementById('tab-expired').className = 'tab-btn active-notes';
+                document.getElementById('tab-expired').className = 'tab-btn active-expired';
                 document.getElementById('controls-section').style.display = 'flex';
                 loadJobs();
             } else if (tab === 'admin') {
+                document.getElementById('controls-section').style.display = 'none';
                 document.getElementById('tab-admin').className = 'tab-btn active-admin';
                 loadAdminDashboard();
             }
@@ -924,13 +1147,20 @@
             searchTimeout = setTimeout(() => {
                 searchQuery = document.getElementById('searchInput').value.trim();
                 loadJobs();
-            }, 300);
+            }, 250);
         }
 
         function loadJobs() {
             const container = document.getElementById('content-area');
             if (!container) return;
-            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
+            
+            // Render Skeleton Loader
+            container.innerHTML = `
+                <div class="jobs-grid">
+                    <div class="skeleton-card"><div class="skeleton-line" style="width:40%;"></div><div class="skeleton-line" style="width:75%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+                    <div class="skeleton-card"><div class="skeleton-line" style="width:30%;"></div><div class="skeleton-line" style="width:80%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+                    <div class="skeleton-card"><div class="skeleton-line" style="width:50%;"></div><div class="skeleton-line" style="width:65%;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+                </div>`;
 
             let url = currentTab === 'expired'
                 ? '/api/jobs?status=all_expired_closed&limit=100'
@@ -943,22 +1173,74 @@
                 .then(data => {
                     if (data.status === 'success') {
                         renderJobs(data.jobs);
+                    } else {
+                        showErrorState("İlan verisi alınamadı.");
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    container.innerHTML = '<div class="empty-state"><p>İlanlar yüklenirken bir hata oluştu.</p></div>';
+                    showErrorState("İlanlar yüklenirken bir bağlantı hatası oluştu.");
                 });
+        }
+
+        function showErrorState(msg) {
+            const container = document.getElementById('content-area');
+            container.innerHTML = `
+                <div class="state-container">
+                    <div class="state-icon">⚠️</div>
+                    <div class="state-title">Yükleme Hatası</div>
+                    <div class="state-desc">${escapeHtml(msg)}</div>
+                    <button class="btn-action btn-scan" onclick="loadJobs()">Tekrar Dene</button>
+                </div>`;
+        }
+
+        function formatRelativeDeadline(deadlineStr, createdStr) {
+            if (deadlineStr) {
+                const deadline = new Date(deadlineStr);
+                const now = new Date();
+                const diffTime = deadline - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) return { text: "Son başvuru tarihi geçti", urgent: true };
+                if (diffDays === 0) return { text: "Son başvuru: Bugün!", urgent: true };
+                if (diffDays === 1) return { text: "Son başvuru: Yarın", urgent: true };
+                if (diffDays <= 5) return { text: `Son başvuru: ${diffDays} gün kaldı`, urgent: true };
+                return { text: `Son başvuru: ${diffDays} gün kaldı`, urgent: false };
+            }
+            if (createdStr) {
+                const created = new Date(createdStr);
+                const now = new Date();
+                const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+                if (diffDays === 0) return { text: "Yayınlandı: Bugün", urgent: false };
+                return { text: `Yayınlandı: ${diffDays} gün önce`, urgent: false };
+            }
+            return { text: "Aktif İlan", urgent: false };
+        }
+
+        function extractSkillTags(job) {
+            const text = `${job.title} ${job.description || ''} ${job.requirements || ''}`.toLowerCase();
+            const knownSkills = [
+                'python', 'java', 'react', 'node', 'sql', 'backend', 'frontend', 'mobile', 
+                'flutter', 'aws', 'docker', 'ai', 'data', 'c++', 'c#', '.net', 'vue', 
+                'business analyst', 'excel', 'power bi', 'erp', 'sap', 'marketing'
+            ];
+            const found = [];
+            knownSkills.forEach(skill => {
+                if (text.includes(skill) && found.length < 3) {
+                    found.push(skill.toUpperCase());
+                }
+            });
+            return found;
         }
 
         function renderJobs(jobs) {
             const container = document.getElementById('content-area');
             if (!jobs || jobs.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📭</div>
-                        <h3>İlan Bulunamadı</h3>
-                        <p>Arama kriterlerinize uygun staj ilanı bulunamadı.</p>
+                    <div class="state-container">
+                        <div class="state-icon">📭</div>
+                        <div class="state-title">Uygun İlan Bulunamadı</div>
+                        <div class="state-desc">Arama veya filtreleme kriterlerinize uygun staj ilanı şu anda bulunmuyor.</div>
                     </div>`;
                 return;
             }
@@ -973,36 +1255,52 @@
                 if (job.work_type === 'remote') workTypeLabel = '🏠 Uzaktan';
                 if (job.work_type === 'hybrid') workTypeLabel = '⚡ Hibrit';
 
-                let badgeColor = isCE ? 'ce-border' : 'mis-border';
-                if (isExpired) badgeColor = 'expired-border';
+                let categoryClass = isCE ? 'ce' : 'mis';
+                if (isExpired) categoryClass = 'expired';
+
+                const deadlineInfo = formatRelativeDeadline(job.deadline, job.created_at || job.scanned_at);
+                const skills = extractSkillTags(job);
 
                 html += `
-                    <div class="job-card ${badgeColor}">
+                    <div class="job-card ${categoryClass}">
+                        <div class="job-card-indicator"></div>
                         <div>
-                            <div class="job-header">
-                                <div>
-                                    <div class="company-name">${escapeHtml(job.company)}</div>
-                                    <div class="job-title">${escapeHtml(job.title)}</div>
+                            <div class="card-top">
+                                <span class="company-name">${escapeHtml(job.company)}</span>
+                                <span class="platform-badge">${escapeHtml(job.platform)} ${isExpired ? '(Kapanmış)' : ''}</span>
+                            </div>
+                            <h2 class="job-title">${escapeHtml(job.title)}</h2>
+                            
+                            <div class="meta-pills">
+                                <span class="meta-pill">📍 ${escapeHtml(job.location || 'Türkiye')}</span>
+                                <span class="meta-pill">${workTypeLabel}</span>
+                            </div>
+
+                            ${skills.length > 0 ? `
+                                <div class="skills-tags">
+                                    ${skills.map(s => `<span class="skill-tag ${!isCE ? 'mis-tag' : ''}">${escapeHtml(s)}</span>`).join('')}
                                 </div>
-                                <span class="platform-tag">${escapeHtml(job.platform)} ${isExpired ? '(Süresi Dolmuş)' : ''}</span>
-                            </div>
-                            <div class="job-details">
-                                <span class="detail-item">📍 ${escapeHtml(job.location)}</span>
-                                <span class="detail-item">${workTypeLabel}</span>
-                            </div>
-                            <div class="job-desc">${escapeHtml(job.description || '')}</div>
+                            ` : ''}
+
+                            <p class="job-desc">${escapeHtml(job.description || 'Staj ilanı detayları için doğrudan başvuru linkini ziyaret ediniz.')}</p>
                         </div>
-                        <div class="job-actions">
-                            <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener noreferrer" class="btn-apply">
-                                ${isExpired ? 'İlan Sayfasını Gör ↗' : 'Doğrudan Başvur ↗'}
-                            </a>
-                            <div class="user-actions">
-                                <button class="btn-user-act ${status === 'saved' ? 'saved' : ''}" title="Kaydet" onclick="toggleUserStatus(${job.id}, 'saved')">
-                                    ⭐
-                                </button>
-                                <button class="btn-user-act ${status === 'applied' ? 'applied' : ''}" title="Başvuruldu İşaretle" onclick="toggleUserStatus(${job.id}, 'applied')">
-                                    ✅
-                                </button>
+
+                        <div class="card-footer">
+                            <span class="deadline-badge ${deadlineInfo.urgent ? 'urgent' : ''}">
+                                ⏱️ ${escapeHtml(deadlineInfo.text)}
+                            </span>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div class="user-toggles">
+                                    <button class="btn-icon-toggle ${status === 'saved' ? 'saved' : ''}" title="Kaydet" onclick="toggleUserStatus(${job.id}, 'saved')">
+                                        ⭐
+                                    </button>
+                                    <button class="btn-icon-toggle ${status === 'applied' ? 'applied' : ''}" title="Başvuruldu İşaretle" onclick="toggleUserStatus(${job.id}, 'applied')">
+                                        ✅
+                                    </button>
+                                </div>
+                                <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener noreferrer" class="btn-apply">
+                                    ${isExpired ? 'Sayfayı Gör ↗' : 'Doğrudan Başvur ↗'}
+                                </a>
                             </div>
                         </div>
                     </div>`;
@@ -1014,7 +1312,7 @@
         function toggleUserStatus(jobId, targetStatus) {
             const email = getUserEmail();
             if (!email) {
-                const userEntered = prompt("Durumunuzu cihazlar arası eşitlemek için e-posta adresinizi girin:");
+                const userEntered = prompt("Durumunuzu eşitlemek için e-posta adresinizi girin:");
                 if (userEntered && userEntered.includes('@')) {
                     document.getElementById('userEmail').value = userEntered;
                     saveUserEmail();
@@ -1051,7 +1349,11 @@
 
         function loadAdminDashboard() {
             const container = document.getElementById('content-area');
-            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Sistem durumu ve istatistikler yükleniyor...</p></div>';
+            container.innerHTML = `
+                <div class="state-container">
+                    <div class="state-icon">⏳</div>
+                    <div class="state-title">Sistem Durumu Yükleniyor...</div>
+                </div>`;
 
             Promise.all([
                 fetch('/api/admin/stats').then(res => res.json()),
@@ -1064,30 +1366,33 @@
                 let html = `
                     <div class="admin-dashboard">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <h3>🛠️ Sistem Durumu & Zamanlanmış Görev Paneli</h3>
-                            <button class="btn-scan" onclick="triggerScan()">🔄 Şimdi Tara (Manual Scan)</button>
+                            <div>
+                                <h2 style="font-size:20px; font-weight:800;">🛠️ Sistem Durumu & Yönetici Paneli</h2>
+                                <p style="font-size:13px; color:var(--text-muted);">6 saatlik bağımsız sunucu tarama performansı ve günlük verileri</p>
+                            </div>
+                            <button class="btn-action btn-scan" onclick="triggerScan()">🔄 Manuel Taramayı Başlat</button>
                         </div>
 
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <span class="metric-label">⏱️ Son Başarılı Tarama</span>
-                                <span class="metric-value">${escapeHtml(sys.last_successful_scan || 'Henüz Yapılmadı')}</span>
+                                <span class="metric-value" style="font-size:16px;">${escapeHtml(sys.last_successful_scan || 'Henüz Yapılmadı')}</span>
                             </div>
                             <div class="metric-card">
                                 <span class="metric-label">⏳ Sonraki Planlı Tarama (6h)</span>
-                                <span class="metric-value">${escapeHtml(sys.next_scheduled_scan || '6 saat içinde')}</span>
+                                <span class="metric-value" style="font-size:16px;">${escapeHtml(sys.next_scheduled_scan || '6 saat içinde')}</span>
                             </div>
                             <div class="metric-card">
                                 <span class="metric-label">📡 Aktif İlanlar</span>
-                                <span class="metric-value" style="color:var(--accent-ce);">${sys.total_active_jobs}</span>
+                                <span class="metric-value" style="color:var(--ce-accent);">${sys.total_active_jobs}</span>
                             </div>
                             <div class="metric-card">
                                 <span class="metric-label">📦 Süresi Dolmuş İlanlar</span>
-                                <span class="metric-value" style="color:var(--accent-amber);">${sys.total_expired_jobs}</span>
+                                <span class="metric-value" style="color:var(--warning);">${sys.total_expired_jobs}</span>
                             </div>
                             <div class="metric-card">
                                 <span class="metric-label">🚫 Kapanmış İlanlar</span>
-                                <span class="metric-value" style="color:var(--accent-danger);">${sys.total_closed_jobs}</span>
+                                <span class="metric-value" style="color:var(--danger);">${sys.total_closed_jobs}</span>
                             </div>
                             <div class="metric-card">
                                 <span class="metric-label">💻 Bilgisayar Mühendisliği</span>
@@ -1099,8 +1404,8 @@
                             </div>
                         </div>
 
-                        <div class="scan-logs-container">
-                            <h4 style="margin-bottom:14px;">📜 Tarama Geçmişi & Çalışma Günlüğü (Execution Logs)</h4>
+                        <div class="scan-logs-wrapper">
+                            <h3 style="margin-bottom:14px; font-size:16px; font-weight:700;">📜 Tarama Geçmişi & Çalışma Günlüğü (Execution Logs)</h3>
                             <table class="scan-table">
                                 <thead>
                                     <tr>
@@ -1128,9 +1433,9 @@
                                 <td>${escapeHtml(sc.finished_at || '-')}</td>
                                 <td>${sc.duration_seconds || 0}s</td>
                                 <td>${sc.jobs_found || 0}</td>
-                                <td><strong style="color:var(--accent-green);">${sc.new_jobs_added || 0}</strong></td>
+                                <td><strong style="color:var(--success);">${sc.new_jobs_added || 0}</strong></td>
                                 <td>${sc.updated_jobs || 0}</td>
-                                <td><span style="color:var(--accent-amber);">${sc.expired_jobs || 0}</span></td>
+                                <td><span style="color:var(--warning);">${sc.expired_jobs || 0}</span></td>
                                 <td>${statusBadge}</td>
                                 <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(sc.errors_log || '-')}</td>
                             </tr>`;
@@ -1150,14 +1455,14 @@
         function loadNotes() {
             const container = document.getElementById('content-area');
             container.innerHTML = `
-                <div class="notes-container">
-                    <h3 style="margin-bottom:16px;">📌 Ortak Pano & Öğrenci Notları</h3>
+                <div class="panel-box">
+                    <h2 style="font-size:18px; font-weight:800; margin-bottom:16px;">📌 Ortak Pano & Öğrenci Notları</h2>
                     <div class="note-form">
                         <input type="text" id="noteAuthor" placeholder="Adınız / Takma Adınız (Varsayılan: Anonim)">
                         <textarea id="noteMessage" placeholder="Staj tecrübeleri, mülakat tüyoları veya ilan detayları hakkında not yazın..."></textarea>
                         <button onclick="postNote()">Notu Paylaş</button>
                     </div>
-                    <div class="notes-list" id="notesList">⏳ Notlar yükleniyor...</div>
+                    <div id="notesList">⏳ Notlar yükleniyor...</div>
                 </div>`;
 
             fetch('/api/notes')
@@ -1173,9 +1478,9 @@
                         data.notes.forEach(n => {
                             html += `
                                 <div class="note-card">
-                                    <span class="note-time">${escapeHtml(n.created_at)}</span>
-                                    <div class="note-author">👤 ${escapeHtml(n.author)}</div>
-                                    <div class="note-msg">${escapeHtml(n.message)}</div>
+                                    <span style="font-size:11px; color:var(--text-subtle); float:right;">${escapeHtml(n.created_at)}</span>
+                                    <div style="font-weight:700; color:var(--warning); font-size:13px; margin-bottom:4px;">👤 ${escapeHtml(n.author)}</div>
+                                    <div style="font-size:14px; color:var(--text-main); line-height:1.5;">${escapeHtml(n.message)}</div>
                                 </div>`;
                         });
                         list.innerHTML = html;
@@ -1219,7 +1524,7 @@
 
         function loadNotifications() {
             const container = document.getElementById('content-area');
-            container.innerHTML = '<div class="notifications-list" id="notifList">⏳ Bildirimler yükleniyor...</div>';
+            container.innerHTML = '<div class="panel-box" id="notifList">⏳ Bildirimler yükleniyor...</div>';
 
             fetch('/api/notifications')
                 .then(res => res.json())
@@ -1227,17 +1532,17 @@
                     if (data.status === 'success') {
                         const list = document.getElementById('notifList');
                         if (data.notifications.length === 0) {
-                            list.innerHTML = '<div class="empty-state"><p>Henüz bildirim yok.</p></div>';
+                            list.innerHTML = '<div class="state-container"><div class="state-icon">🔔</div><div class="state-title">Henüz Bildirim Yok</div></div>';
                             return;
                         }
-                        let html = '';
+                        let html = '<h2 style="font-size:18px; font-weight:800; margin-bottom:16px;">🔔 Sistem Bildirimleri</h2>';
                         data.notifications.forEach(n => {
                             html += `
                                 <div class="notification-card">
-                                    <div class="notification-icon">🔔</div>
+                                    <div style="font-size:22px;">🔔</div>
                                     <div>
-                                        <div class="notification-title">${escapeHtml(n.title)}</div>
-                                        <div class="notification-desc">${escapeHtml(n.message)}</div>
+                                        <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${escapeHtml(n.title)}</div>
+                                        <div style="font-size:13px; color:var(--text-muted);">${escapeHtml(n.message)}</div>
                                     </div>
                                 </div>`;
                         });
@@ -1252,11 +1557,15 @@
         }
 
         function triggerScan() {
+            const scanBtn = document.getElementById('scanBtn');
+            if (scanBtn) scanBtn.innerText = '⏳ Taranıyor...';
+
             fetch('/api/scan', { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
-                    alert('Staj ilanı taraması başlatıldı. 10-15 saniye sonra istatistikleri ve sonuçları görebilirsiniz.');
+                    alert('Staj ilanı taraması arka planda başlatıldı. 10-15 saniye içinde sonuçlar otomatik güncellenecektir.');
                     setTimeout(() => {
+                        if (scanBtn) scanBtn.innerText = '🔄 Şimdi Tara';
                         loadStats();
                         if (currentTab === 'admin') loadAdminDashboard();
                         else if (currentTab === 'jobs' || currentTab === 'expired') loadJobs();
