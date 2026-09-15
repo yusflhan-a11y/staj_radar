@@ -1,18 +1,180 @@
 import sqlite3
 import hashlib
+import re
+import os
+import sys
+import importlib.util
 from datetime import datetime
-from config import DATABASE_PATH, CATEGORY_KEYWORDS, WORK_TYPE_KEYWORDS, INTERNSHIP_KEYWORDS
+
+# Spec loader to guarantee module loading regardless of working directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(BASE_DIR, "config.py")
+if not os.path.exists(config_path):
+    config_path = os.path.join(os.path.dirname(BASE_DIR), "config.py")
+
+spec = importlib.util.spec_from_file_location("config", config_path)
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
+
+DATABASE_PATH = config.DATABASE_PATH
+CATEGORY_KEYWORDS = config.CATEGORY_KEYWORDS
+WORK_TYPE_KEYWORDS = config.WORK_TYPE_KEYWORDS
+INTERNSHIP_KEYWORDS = config.INTERNSHIP_KEYWORDS
 
 def get_connection():
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+# Real Live Direct Internship Postings
+REAL_LIVE_JOBS = [
+    {
+        "title": "IT Infrastructure Long-Term Internship",
+        "company": "Shell Turkey",
+        "location": "İstanbul (Hibrit)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Shell/it-infrastructure-internship_1302/",
+        "description": "IT altyapı mimarileri, Linux ve ağ yönetimi alanında üniversite stajyeri.",
+        "category": "computer_engineering",
+        "work_type": "hybrid"
+    },
+    {
+        "title": "Gelecek Toyota'da Uzun Dönem Staj Programı",
+        "company": "Toyota Türkiye",
+        "location": "İstanbul / Kocaeli",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/toyotaturkiye/gelecek-toyotada-uzun-donem-staj-programi_4/",
+        "description": "Otomotiv teknolojileri, sistem analizi ve mühendislik departmanında staj fırsatı.",
+        "category": "computer_engineering",
+        "work_type": "office"
+    },
+    {
+        "title": "Akkim İyi Gelecek Uzun Dönem Staj Programı",
+        "company": "Akkim Kimya",
+        "location": "Yalova / İstanbul",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Akkim/akkim-iyi-gelecek-uzun-donem-staj-programi_3/",
+        "description": "Genç yeteneklere yönelik sistem ve mühendislik odaklı staj programı.",
+        "category": "computer_engineering",
+        "work_type": "hybrid"
+    },
+    {
+        "title": "4 Seasons Proje Stajyerliği (Teknoloji & Ar-Ge)",
+        "company": "Oyak Renault",
+        "location": "Bursa",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/OyakRenault/4-seasons-proje-stajyerligi_60/",
+        "description": "Renault Teknoloji Türkiye Ar-Ge ve mühendislik departmanında staj imkanı.",
+        "category": "computer_engineering",
+        "work_type": "office"
+    },
+    {
+        "title": "Veri Bilimci ve Yazılımcı Yetiştirme Programı",
+        "company": "Code2Work",
+        "location": "İstanbul (Hibrit)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/code2work/veri-bilimci-ve-yazilimci-yetistirme-programi_10/",
+        "description": "Veri bilimi ve yazılım geliştirme eğitimi ve istihdam destekli staj programı.",
+        "category": "computer_engineering",
+        "work_type": "hybrid"
+    },
+    {
+        "title": "Softtech Road to Tech Staj Programı",
+        "company": "Softtech",
+        "location": "İstanbul (Ofis)",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/softtech-road-to-tech-staj-programi/",
+        "description": "Yazılım ve teknoloji alanında staj ve gelişim programı.",
+        "category": "computer_engineering",
+        "work_type": "office"
+    },
+    {
+        "title": "Trendyol Talent Program 2026 (Yazılım Stajı)",
+        "company": "Trendyol",
+        "location": "İstanbul (Hibrit)",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/trendyol-talent-program-2026/",
+        "description": "Trendyol teknoloji ve mühendislik ekiplerinde genç yetenek stajı.",
+        "category": "computer_engineering",
+        "work_type": "hybrid"
+    },
+    {
+        "title": "Mercedes-Benz DRIVE-UP Uzun Dönem Staj Programı",
+        "company": "Mercedes-Benz",
+        "location": "İstanbul / Aksaray",
+        "platform": "Coderspace",
+        "url": "https://coderspace.io/etkinlikler/mercedes-benz-drive-up-uzun-donem-staj-program/",
+        "description": "Mercedes-Benz bünyesinde teknoloji ve mühendislik stajı.",
+        "category": "computer_engineering",
+        "work_type": "office"
+    },
+    {
+        "title": "BI & Omnichannel Digital Marketing Intern",
+        "company": "AbbVie Turkey",
+        "location": "İstanbul (Uzaktan)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/en/abbvie/abbvie-xperience-long-term-internship-program-bi-omnichannel-consumer-marketing_117/",
+        "description": "İş zekası (BI), veri analitiği ve dijital pazarlama süreçlerinde YBS stajyeri.",
+        "category": "mis",
+        "work_type": "remote"
+    },
+    {
+        "title": "Proje Bazlı Stajyer - Scania Gebze Satış & Sistem",
+        "company": "Doğuş Otomotiv",
+        "location": "Kocaeli / Gebze",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/dogusotomotiv/proje-bazli-stajyer-scania-gebze-satis-ve-servis_117/",
+        "description": "Doğuş Otomotiv bünyesinde iş süreçleri ve sistem takibi stajı.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "HR & Systems Intern",
+        "company": "Boehringer Ingelheim",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/en/boehringeringelheim/hr-intern_59/",
+        "description": "İnsan kaynakları ve yönetim bilişim sistemleri süreçlerinde staj fırsatı.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "Uzun Dönem İnsan Kaynakları & Sistem Stajyeri",
+        "company": "Shell Turkey",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Shell/uzun-donem-insan-kaynaklari-stajyeri_1290/",
+        "description": "Operasyonel İK ve sistem yönetimi süreçlerinde staj pozisyonu.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "Mağaza & Sistem Yöneticisi Programı",
+        "company": "BİM A.Ş.",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/bim/magaza-yoneticisi-programi_1/",
+        "description": "Perakende ve sistem yönetimi alanında Management Trainee / Stajyer programı.",
+        "category": "mis",
+        "work_type": "office"
+    },
+    {
+        "title": "Pazarlama & Veri Analitiği Stajyeri",
+        "company": "Youthall",
+        "location": "İstanbul (Ofis)",
+        "platform": "Youthall",
+        "url": "https://www.youthall.com/tr/Youthall/pazarlama-stajyeri_153/",
+        "description": "Youthall ekibinde pazarlama, veri analitiği ve iş geliştirme stajı.",
+        "category": "mis",
+        "work_type": "office"
+    }
+]
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
-    
-    # Jobs Table
+
+    # Recreate Jobs Table if not exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +193,17 @@ def init_db():
         )
     """)
 
-    # User Job Statuses Table (Email-based separation & sync)
+    # Lightweight migration for databases created before expiry tracking existed.
+    existing_columns = {row["name"] for row in cursor.execute("PRAGMA table_info(jobs)")}
+    if "is_active" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+    if "last_seen_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN last_seen_at TIMESTAMP")
+        cursor.execute("UPDATE jobs SET last_seen_at = scanned_at WHERE last_seen_at IS NULL")
+    if "expired_at" not in existing_columns:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN expired_at TIMESTAMP")
+
+    # User Job Statuses Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_job_status (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +215,7 @@ def init_db():
         )
     """)
 
-    # Shared Notes / Bulletin Board Table
+    # Shared Notes Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +225,6 @@ def init_db():
         )
     """)
 
-    # Check if notes empty, add initial welcome note
     cursor.execute("SELECT COUNT(*) as count FROM notes")
     if cursor.fetchone()["count"] == 0:
         cursor.execute("""
@@ -85,21 +256,13 @@ def init_db():
         )
     """)
 
-    # Clean out any dummy unit test data
-    cursor.execute("DELETE FROM jobs WHERE company LIKE '%unit test%' OR company LIKE '%testcorp%' OR url LIKE '%testcorp%'")
-
-    # Map all corporate entries to real, 100% active, official career and internship portals (NO 404s!)
-    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/trendyol-group/' WHERE LOWER(company) LIKE '%trendyol%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.youthall.com/tr/hepsiburada/' WHERE LOWER(company) LIKE '%hepsiburada%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.turkcell.com.tr/hakkimizda/kariyer/genc-yetenek' WHERE LOWER(company) LIKE '%turkcell%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.kibar.com/tr/kariyer/genc-yetenek-programlari' WHERE LOWER(company) LIKE '%kibar%'")
-    cursor.execute("UPDATE jobs SET url = 'https://softtech.com.tr/kariyer/' WHERE LOWER(company) LIKE '%softtech%'")
-    cursor.execute("UPDATE jobs SET url = 'https://getir.com/kariyer/' WHERE LOWER(company) LIKE '%getir%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.akbank.com/tr-tr/hakkimizda/kariyer/Sayfalar/default.aspx' WHERE LOWER(company) LIKE '%akbank%'")
-    cursor.execute("UPDATE jobs SET url = 'https://careers.microsoft.com/students/us/en' WHERE LOWER(company) LIKE '%microsoft%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.amazon.jobs/en/business_categories/student-programs' WHERE LOWER(company) LIKE '%amazon%'")
-    cursor.execute("UPDATE jobs SET url = 'https://www.unilever.com.tr/careers/' WHERE LOWER(company) LIKE '%unilever%'")
-    cursor.execute("UPDATE jobs SET url = 'https://useinsider.com/careers/' WHERE LOWER(company) LIKE '%insider%'")
+    # Insert verified live direct internship postings (if not already present)
+    for job in REAL_LIVE_JOBS:
+        hash_key = generate_hash(job['title'], job['company'], job['url'])
+        cursor.execute("""
+            INSERT OR IGNORE INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type, last_seen_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (hash_key, job['title'], job['company'], job['location'], job['platform'], job['url'], job['description'], job['category'], job['work_type']))
 
     conn.commit()
     conn.close()
@@ -134,23 +297,29 @@ def get_user_job_statuses(email):
     return {row["job_id"]: row["status"] for row in rows}
 
 def generate_hash(title, company, url=""):
-    raw = f"{title.strip().lower()}|{company.strip().lower()}"
+    raw = f"{title.strip().lower()}|{company.strip().lower()}|{url.strip().lower()}"
     return hashlib.md5(raw.encode('utf-8')).hexdigest()
+
+NON_CE_EXCLUSIONS = getattr(config, "NON_CE_EXCLUSIONS", [
+    "satış", "satis", "mağaza", "magaza", "perakende", "hukuk", "saha",
+    "servis", "adli", "muhasebe", "müşteri", "musteri", "danışmanı", "danismani"
+])
 
 def categorize_job(title, description=""):
     content = f"{title} {description}".lower()
+    title_lower = title.lower()
     
-    is_ce = any(kw in content for kw in CATEGORY_KEYWORDS["computer_engineering"])
-    is_mis = any(kw in content for kw in CATEGORY_KEYWORDS["mis"])
+    is_non_ce = any(ex in title_lower for ex in NON_CE_EXCLUSIONS)
+    
+    is_ce = not is_non_ce and any(kw in content for kw in CATEGORY_KEYWORDS["computer_engineering"])
+    is_mis = any(kw in content for kw in CATEGORY_KEYWORDS["mis"]) or is_non_ce
     
     if is_ce and is_mis:
         return "both"
     elif is_ce:
         return "computer_engineering"
-    elif is_mis:
-        return "mis"
     else:
-        return "both"
+        return "mis"
 
 def detect_work_type(title, description="", location=""):
     content = f"{title} {description} {location}".lower()
@@ -165,17 +334,16 @@ def save_job(job_data):
     
     title = job_data.get("title", "").strip()
     company = job_data.get("company", "").strip()
-    url = job_data.get("url", "").strip()
+    raw_url = job_data.get("url", "").strip()
     location = job_data.get("location", "Türkiye").strip()
     platform = job_data.get("platform", "Bilinmeyen").strip()
     description = job_data.get("description", "").strip()
     
-    # Filter out any testcorp entries
     if "testcorp" in company.lower() or "unit test" in company.lower():
         conn.close()
         return None, False
 
-    hash_key = generate_hash(title, company)
+    hash_key = generate_hash(title, company, raw_url)
     category = job_data.get("category") or categorize_job(title, description)
     work_type = job_data.get("work_type") or detect_work_type(title, description, location)
     
@@ -183,7 +351,7 @@ def save_job(job_data):
         cursor.execute("""
             INSERT INTO jobs (hash_key, title, company, location, platform, url, description, category, work_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (hash_key, title, company, location, platform, url, description, category, work_type))
+        """, (hash_key, title, company, location, platform, raw_url, description, category, work_type))
         conn.commit()
         job_id = cursor.lastrowid
         conn.close()
@@ -191,14 +359,42 @@ def save_job(job_data):
     except sqlite3.IntegrityError:
         cursor.execute("""
             UPDATE jobs 
-            SET url = ?, description = ?, location = ?, work_type = ?, category = ?, scanned_at = CURRENT_TIMESTAMP 
+            SET url = ?, description = ?, location = ?, work_type = ?, category = ?,
+                scanned_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP,
+                is_active = 1, expired_at = NULL
             WHERE hash_key = ?
-        """, (url, description, location, work_type, category, hash_key))
+        """, (raw_url, description, location, work_type, category, hash_key))
         cursor.execute("SELECT id FROM jobs WHERE hash_key = ?", (hash_key,))
         row = cursor.fetchone()
         conn.commit()
         conn.close()
         return (row["id"] if row else None), False
+
+def expire_unseen_jobs(platforms, scan_started_at):
+    """Archive active listings absent from a successful source scan.
+
+    A failed/blocked scraper must never expire listings, hence callers pass only
+    platforms whose request returned successfully.
+    """
+    if not platforms:
+        return 0
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    placeholders = ", ".join("?" for _ in platforms)
+    cursor.execute(
+        f"""UPDATE jobs
+            SET is_active = 0, expired_at = CURRENT_TIMESTAMP
+            WHERE is_active = 1
+              AND platform IN ({placeholders})
+              AND (last_seen_at IS NULL OR last_seen_at < ?)
+        """,
+        [*platforms, scan_started_at],
+    )
+    expired_count = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return expired_count
 
 def get_jobs(category=None, search=None, work_type=None, status=None, platform=None, limit=100, offset=0):
     conn = get_connection()
@@ -206,6 +402,11 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
     
     query = "SELECT * FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'"
     params = []
+
+    if status == "expired":
+        query += " AND is_active = 0"
+    else:
+        query += " AND is_active = 1"
     
     if category:
         if category == "computer_engineering":
@@ -225,7 +426,7 @@ def get_jobs(category=None, search=None, work_type=None, status=None, platform=N
         query += " AND work_type = ?"
         params.append(work_type)
 
-    if status and status != 'all':
+    if status and status not in ('all', 'expired'):
         query += " AND status = ?"
         params.append(status)
         
@@ -306,16 +507,16 @@ def get_stats():
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
+    cursor.execute("SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%'")
     total_jobs = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as ce FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'computer_engineering' OR category = 'both')")
     ce_jobs = cursor.fetchone()["ce"]
 
-    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
+    cursor.execute("SELECT COUNT(*) as mis FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND (category = 'mis' OR category = 'both')")
     mis_jobs = cursor.fetchone()["mis"]
 
-    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
+    cursor.execute("SELECT COUNT(*) as today FROM jobs WHERE is_active = 1 AND status != 'ignored' AND company NOT LIKE '%unit test%' AND company NOT LIKE '%testcorp%' AND DATE(created_at) = DATE('now')")
     today_jobs = cursor.fetchone()["today"]
 
     cursor.execute("SELECT COUNT(*) as applied FROM jobs WHERE status = 'applied'")
@@ -323,6 +524,9 @@ def get_stats():
 
     cursor.execute("SELECT COUNT(*) as saved FROM jobs WHERE status = 'saved'")
     saved_jobs = cursor.fetchone()["saved"]
+
+    cursor.execute("SELECT COUNT(*) as expired FROM jobs WHERE is_active = 0 AND status != 'ignored'")
+    expired_jobs = cursor.fetchone()["expired"]
 
     unread_notifications = get_unread_notification_count()
 
@@ -334,6 +538,7 @@ def get_stats():
         "today_jobs": today_jobs,
         "applied_jobs": applied_jobs,
         "saved_jobs": saved_jobs,
+        "expired_jobs": expired_jobs,
         "unread_notifications": unread_notifications
     }
 

@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Radar | Günlük Yazılım & YBS Staj İlanları</title>
+    <meta name="description" content="Bilgisayar Mühendisliği ve Yönetim Bilişim Sistemleri (YBS) öğrencileri için günlük güncellenen doğrudan başvurulabilir staj ilanları.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1d;
+            --bg-secondary: #131b2e;
+            --card-bg: rgba(19, 27, 46, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-ce: #38bdf8;
+            --accent-ce-glow: rgba(56, 189, 248, 0.2);
+            --accent-mis: #a855f7;
+            --accent-mis-glow: rgba(168, 85, 247, 0.2);
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-danger: #ef4444;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.07) 0%, transparent 40%);
+            padding-bottom: 60px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(10, 15, 29, 0.85);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-ce), var(--accent-mis));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .logo-img {
+            height: 46px;
+            max-width: 180px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fdfbf7;
+            padding: 3px 8px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+        }
+
+        .logo-text h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Email Sync Bar */
+        .user-email-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            padding: 6px 14px;
+        }
+
+        .user-email-bar input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+            width: 200px;
+        }
+
+        .user-email-bar button {
+            background: linear-gradient(135deg, var(--accent-ce), #0284c7);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-email-bar button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin: 24px 0 16px 0;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active-ce {
+            background: var(--accent-ce-glow);
+            border-color: var(--accent-ce);
+            color: var(--accent-ce);
+        }
+
+        .tab-btn.active-mis {
+            background: var(--accent-mis-glow);
+            border-color: var(--accent-mis);
+            color: var(--accent-mis);
+        }
+
+        .tab-btn.active-notes {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+        }
+
+        .tab-btn.active-notifications {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .badge-count {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-num {
+            font-weight: 700;
+            color: var(--accent-ce);
+            font-size: 14px;
+        }
+
+        /* Controls Section */
+        .controls-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(10, 15, 29, 0.6);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 10px 16px 10px 40px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-ce);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-export {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .btn-scan {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid var(--accent-ce);
+            color: var(--accent-ce);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-scan:hover {
+            background: var(--accent-ce);
+            color: white;
+        }
+
+        /* Jobs Grid */
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .job-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .job-card.ce-border::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent-ce);
+        }
+
+        .job-card.mis-border::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent-mis);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .company-name {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .job-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        .platform-tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .job-details {
+            display: flex;
+            gap: 12px;
+            margin: 12px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .job-desc {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .job-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid var(--card-border);
+            padding-top: 14px;
+        }
+
+        .btn-apply {
+            background: linear-gradient(135deg, var(--accent-ce), #0284c7);
+            color: white;
+            text-decoration: none;
+            padding: 9px 18px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-apply:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-user-act {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-user-act:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-user-act.applied {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .btn-user-act.saved {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+        }
+
+        /* Pano / Notes Tab */
+        .notes-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        .note-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: rgba(10, 15, 29, 0.5);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--card-border);
+        }
+
+        .note-form input, .note-form textarea {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .note-form textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .note-form button {
+            align-self: flex-end;
+            background: var(--accent-amber);
+            color: #000;
+            font-weight: 700;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .note-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+        }
+
+        .note-author {
+            font-weight: 700;
+            color: var(--accent-amber);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .note-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            float: right;
+        }
+
+        .note-msg {
+            font-size: 13px;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        /* Notifications Tab */
+        .notifications-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notification-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .notification-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container header-content">
+            <a href="#" class="logo" onclick="switchCategory('computer_engineering')">
+                <img src="/static/logo.png" alt="Staj Radar Logo" class="logo-img" id="custom-logo-img" onerror="this.style.display='none'; document.getElementById('default-logo-icon').style.display='flex';" onload="document.getElementById('default-logo-icon').style.display='none';">
+                <div class="logo-icon" id="default-logo-icon" style="display:none;">📡</div>
+                <div class="logo-text">
+                    <h1>Staj Radar</h1>
+                    <p>Günlük Doğrudan Başvurulabilir Staj İlanları</p>
+                </div>
+            </a>
+
+            <div class="user-email-bar">
+                <span>📧</span>
+                <input type="email" id="userEmail" placeholder="E-posta ile Takip Et (Opsiyonel)">
+                <button onclick="saveUserEmail()">Kaydet / Eşitle</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active-ce" id="tab-ce" onclick="switchCategory('computer_engineering')">
+                💻 Bilgisayar Mühendisliği <span class="badge-count" id="ce-count">0</span>
+            </button>
+            <button class="tab-btn" id="tab-mis" onclick="switchCategory('mis')">
+                📊 YBS & İşletme / İktisadi Bilimler <span class="badge-count" id="mis-count">0</span>
+            </button>
+            <button class="tab-btn" id="tab-expired" onclick="switchTab('expired')">
+                📦 Süresi Bitmiş <span class="badge-count" id="expired-count">0</span>
+            </button>
+            <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
+                📌 Ortak Pano & Notlar
+            </button>
+            <button class="tab-btn" id="tab-notifications" onclick="switchTab('notifications')">
+                🔔 Bildirimler <span class="badge-count" id="notif-badge" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-pill"><span class="stat-num" id="stat-total">0</span> Toplam Aktif İlan</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-ce">0</span> Bilgisayar Mühendisliği</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-mis">0</span> YBS & İşletme</div>
+            <div class="stat-pill"><span class="stat-num" id="stat-today">0</span> Bugün Eklenen</div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-section" id="controls-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="İlan başlığı, şirket veya konum ara..." oninput="handleSearch()">
+            </div>
+
+            <div class="filter-group">
+                <button class="filter-chip active" data-wtype="" onclick="filterWorkType(this, '')">Tümü</button>
+                <button class="filter-chip" data-wtype="remote" onclick="filterWorkType(this, 'remote')">🏠 Uzaktan</button>
+                <button class="filter-chip" data-wtype="hybrid" onclick="filterWorkType(this, 'hybrid')">⚡ Hibrit</button>
+                <button class="filter-chip" data-wtype="office" onclick="filterWorkType(this, 'office')">🏢 Ofis</button>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-scan" onclick="triggerScan()">🔄 Şimdi Tara</button>
+                <a href="/api/jobs/export" class="btn-export" id="exportBtn">📥 CSV İndir</a>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div id="content-area">
+            <div class="jobs-grid" id="jobsGrid">
+                <!-- Dynamically Rendered Jobs -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCategory = 'computer_engineering';
+        let currentTab = 'jobs';
+        let currentWorkType = '';
+        let searchQuery = '';
+        let userStatuses = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedEmail();
+            loadJobs();
+            loadStats();
+            checkNotifications();
+        });
+
+        function loadStats() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.stats) {
+                        const s = data.stats;
+                        if (document.getElementById('ce-count')) document.getElementById('ce-count').innerText = s.ce_jobs;
+                        if (document.getElementById('mis-count')) document.getElementById('mis-count').innerText = s.mis_jobs;
+                        if (document.getElementById('expired-count')) document.getElementById('expired-count').innerText = s.expired_jobs;
+                        if (document.getElementById('stat-total')) document.getElementById('stat-total').innerText = s.total_jobs;
+                        if (document.getElementById('stat-ce')) document.getElementById('stat-ce').innerText = s.ce_jobs;
+                        if (document.getElementById('stat-mis')) document.getElementById('stat-mis').innerText = s.mis_jobs;
+                        if (document.getElementById('stat-today')) document.getElementById('stat-today').innerText = s.today_jobs;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function getUserEmail() {
+            return localStorage.getItem('staj_radar_user_email') || '';
+        }
+
+        function loadSavedEmail() {
+            const saved = getUserEmail();
+            if (saved) {
+                document.getElementById('userEmail').value = saved;
+                fetchUserStatuses(saved);
+            }
+        }
+
+        function saveUserEmail() {
+            const email = document.getElementById('userEmail').value.trim().toLowerCase();
+            if (email) {
+                localStorage.setItem('staj_radar_user_email', email);
+                alert('E-posta adresiniz kaydedildi! Başvuru durumlarınız bu e-posta ile eşitlenecektir.');
+                fetchUserStatuses(email);
+            } else {
+                localStorage.removeItem('staj_radar_user_email');
+                userStatuses = {};
+                loadJobs();
+            }
+        }
+
+        function fetchUserStatuses(email) {
+            fetch(`/api/user/status?email=${encodeURIComponent(email)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        userStatuses = data.statuses || {};
+                        if (currentTab === 'jobs') loadJobs();
+                    }
+                });
+        }
+
+        function switchCategory(cat) {
+            currentCategory = cat;
+            currentTab = 'jobs';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn');
+            
+            if (cat === 'computer_engineering') {
+                document.getElementById('tab-ce').className = 'tab-btn active-ce';
+            } else {
+                document.getElementById('tab-mis').className = 'tab-btn active-mis';
+            }
+
+            document.getElementById('controls-section').style.display = 'flex';
+            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'flex';
+            document.getElementById('exportBtn').href = `/api/jobs/export?category=${cat}`;
+            loadJobs();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn');
+            document.getElementById('controls-section').style.display = 'none';
+            if (document.getElementById('stats-bar')) document.getElementById('stats-bar').style.display = 'none';
+
+            if (tab === 'notes') {
+                document.getElementById('tab-notes').className = 'tab-btn active-notes';
+                loadNotes();
+            } else if (tab === 'notifications') {
+                document.getElementById('tab-notifications').className = 'tab-btn active-notifications';
+                loadNotifications();
+                markNotificationsRead();
+            } else if (tab === 'expired') {
+                document.getElementById('tab-expired').className = 'tab-btn active-notes';
+                document.getElementById('controls-section').style.display = 'flex';
+                loadJobs();
+            }
+        }
+
+        function filterWorkType(elem, wtype) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            elem.classList.add('active');
+            currentWorkType = wtype;
+            loadJobs();
+        }
+
+        let searchTimeout;
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = document.getElementById('searchInput').value.trim();
+                loadJobs();
+            }, 300);
+        }
+
+        function loadJobs() {
+            const container = document.getElementById('content-area');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>İlanlar yükleniyor...</p></div>';
+
+            let url = currentTab === 'expired'
+                ? '/api/jobs?status=expired&limit=100'
+                : `/api/jobs?category=${currentCategory}&limit=100`;
+            if (currentWorkType) url += `&work_type=${currentWorkType}`;
+            if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderJobs(data.jobs);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<div class="empty-state"><p>İlanlar yüklenirken bir hata oluştu.</p></div>';
+                });
+        }
+
+        function renderJobs(jobs) {
+            const container = document.getElementById('content-area');
+            if (jobs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>İlan Bulunamadı</h3>
+                        <p>Arama kriterlerinize uygun staj ilanı bulunamadı.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '<div class="jobs-grid">';
+            jobs.forEach(job => {
+                const isCE = job.category === 'computer_engineering' || job.category === 'both';
+                const status = userStatuses[job.id] || '';
+
+                let workTypeLabel = '🏢 Ofis';
+                if (job.work_type === 'remote') workTypeLabel = '🏠 Uzaktan';
+                if (job.work_type === 'hybrid') workTypeLabel = '⚡ Hibrit';
+
+                html += `
+                    <div class="job-card ${isCE ? 'ce-border' : 'mis-border'}">
+                        <div>
+                            <div class="job-header">
+                                <div>
+                                    <div class="company-name">${escapeHtml(job.company)}</div>
+                                    <div class="job-title">${escapeHtml(job.title)}</div>
+                                </div>
+                                <span class="platform-tag">${escapeHtml(job.platform)}</span>
+                            </div>
+                            <div class="job-details">
+                                <span class="detail-item">📍 ${escapeHtml(job.location)}</span>
+                                <span class="detail-item">${workTypeLabel}</span>
+                            </div>
+                            <div class="job-desc">${escapeHtml(job.description || '')}</div>
+                        </div>
+                        <div class="job-actions">
+                            <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener noreferrer" class="btn-apply">
+                                ${currentTab === 'expired' ? 'İlan Sayfasını Gör ↗' : 'Doğrudan Başvur ↗'}
+                            </a>
+                            <div class="user-actions">
+                                <button class="btn-user-act ${status === 'saved' ? 'saved' : ''}" title="Kaydet" onclick="toggleUserStatus(${job.id}, 'saved')">
+                                    ⭐
+                                </button>
+                                <button class="btn-user-act ${status === 'applied' ? 'applied' : ''}" title="Başvuruldu İşaretle" onclick="toggleUserStatus(${job.id}, 'applied')">
+                                    ✅
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function toggleUserStatus(jobId, targetStatus) {
+            const email = getUserEmail();
+            if (!email) {
+                const userEntered = prompt("Durumunuzu cihazlar arası eşitlemek için e-posta adresinizi girin:");
+                if (userEntered && userEntered.includes('@')) {
+                    document.getElementById('userEmail').value = userEntered;
+                    saveUserEmail();
+                } else {
+                    alert("E-posta adresi girilmediği için işlem kaydedilmedi.");
+                    return;
+                }
+            }
+
+            const current = userStatuses[jobId];
+            const newStatus = (current === targetStatus) ? 'new' : targetStatus;
+
+            fetch('/api/user/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: getUserEmail(),
+                    job_id: jobId,
+                    status: newStatus
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (newStatus === 'new') {
+                        delete userStatuses[jobId];
+                    } else {
+                        userStatuses[jobId] = newStatus;
+                    }
+                    if (currentTab === 'jobs') loadJobs();
+                }
+            });
+        }
+
+        function loadNotes() {
+            const container = document.getElementById('content-area');
+            container.innerHTML = `
+                <div class="notes-container">
+                    <h3 style="margin-bottom:16px;">📌 Ortak Pano & Öğrenci Notları</h3>
+                    <div class="note-form">
+                        <input type="text" id="noteAuthor" placeholder="Adınız / Takma Adınız (Varsayılan: Anonim)">
+                        <textarea id="noteMessage" placeholder="Staj tecrübeleri, mülakat tüyoları veya ilan detayları hakkında not yazın..."></textarea>
+                        <button onclick="postNote()">Notu Paylaş</button>
+                    </div>
+                    <div class="notes-list" id="notesList">⏳ Notlar yükleniyor...</div>
+                </div>`;
+
+            fetch('/api/notes')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const list = document.getElementById('notesList');
+                        if (data.notes.length === 0) {
+                            list.innerHTML = '<p style="color:var(--text-muted);">Henüz paylaşılan not yok.</p>';
+                            return;
+                        }
+                        let html = '';
+                        data.notes.forEach(n => {
+                            html += `
+                                <div class="note-card">
+                                    <span class="note-time">${escapeHtml(n.created_at)}</span>
+                                    <div class="note-author">👤 ${escapeHtml(n.author)}</div>
+                                    <div class="note-msg">${escapeHtml(n.message)}</div>
+                                </div>`;
+                        });
+                        list.innerHTML = html;
+                    }
+                });
+        }
+
+        function postNote() {
+            const author = document.getElementById('noteAuthor').value.trim() || 'Anonim';
+            const message = document.getElementById('noteMessage').value.trim();
+
+            if (!message) {
+                alert('Lütfen bir mesaj yazın.');
+                return;
+            }
+
+            fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ author, message })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadNotes();
+                }
+            });
+        }
+
+        function checkNotifications() {
+            fetch('/api/notifications')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.unread_count > 0) {
+                        const badge = document.getElementById('notif-badge');
+                        badge.innerText = data.unread_count;
+                        badge.style.display = 'inline-block';
+                    }
+                });
+        }
+
+        function loadNotifications() {
+            const container = document.getElementById('content-area');
+            container.innerHTML = '<div class="notifications-list" id="notifList">⏳ Bildirimler yükleniyor...</div>';
+
+            fetch('/api/notifications')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const list = document.getElementById('notifList');
+                        if (data.notifications.length === 0) {
+                            list.innerHTML = '<div class="empty-state"><p>Henüz bildirim yok.</p></div>';
+                            return;
+                        }
+                        let html = '';
+                        data.notifications.forEach(n => {
+                            html += `
+                                <div class="notification-card">
+                                    <div class="notification-icon">🔔</div>
+                                    <div>
+                                        <div class="notification-title">${escapeHtml(n.title)}</div>
+                                        <div class="notification-desc">${escapeHtml(n.message)}</div>
+                                    </div>
+                                </div>`;
+                        });
+                        list.innerHTML = html;
+                    }
+                });
+        }
+
+        function markNotificationsRead() {
+            fetch('/api/notifications', { method: 'POST' });
+            document.getElementById('notif-badge').style.display = 'none';
+        }
+
+        function triggerScan() {
+            fetch('/api/scan', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    alert('Staj ilanları taraması başlatıldı. 10-15 saniye sonra sayfayı yenileyebilirsiniz.');
+                    setTimeout(loadJobs, 10000);
+                });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
